@@ -10,33 +10,54 @@
   text-align: center;
 }
 
+.mode-label {
+  color: #d5d5d5;
+  margin: 0 0 1rem;
+  text-align: center;
+}
+
+.error-message {
+  color: #ff7b7b;
+  margin: 0 0 1rem;
+  text-align: center;
+}
+
 .movie-grid {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
 
-.App-header {
-  background-color: #282c34;
+.empty-state {
+  color: #cfcfcf;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.load-more-row {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-evenly;
-  color: white;
-  padding: 20px;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.load-more-button {
+  background: #4a7dff;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.7rem 1rem;
+}
+
+.load-more-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 @media (max-width: 600px) {
-  .movie-card {
-    width: 100%;
-  }
-
-  .search-bar {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .search-bar form {
+  .search-bar__form {
     flex-direction: column;
   }
 }

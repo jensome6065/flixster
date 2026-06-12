@@ -1,0 +1,38 @@
+.search-bar {
+  margin-bottom: 1rem;
+}
+
+.search-bar__form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-bar__input {
+  background: #1a1a1a;
+  border: 1px solid #383838;
+  border-radius: 8px;
+  color: #ffffff;
+  flex: 1;
+  font-size: 1rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.search-bar__button {
+  background: #4a7dff;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.65rem 0.95rem;
+}
+
+.search-bar__button--secondary {
+  background: #3a3a3a;
+}
+
+.search-bar__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}

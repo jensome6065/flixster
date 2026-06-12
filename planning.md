@@ -159,6 +159,11 @@ All core state is owned by `App` unless noted.
   - **Owner:** `App` (or controlled via `SearchBar`)  
   - **Updates when:** user types in search input, clear button clicked.
 
+- `activeMode: 'now_playing' | 'search'`  
+  - **Initial:** `'now_playing'`  
+  - **Owner:** `App`  
+  - **Updates when:** user submits a non-empty query (set to `'search'`); user clears/search resets to Now Playing (set to `'now_playing'`).
+
 - `currentPage: number`  
   - **Initial:** `1`  
   - **Owner:** `App`  
@@ -221,7 +226,7 @@ All core state is owned by `App` unless noted.
 
 ## 4) Data Flow
 
-`App` fetches movie lists from TMDb (Now Playing by default, or Search when a query is submitted), then normalizes each raw movie object into a `MovieSummary` shape used by UI (`id`, `title`, image paths, vote average, release date). `App` applies the selected sort option to that array and passes the sorted list to `MovieList`. `MovieList` maps each item to a `MovieCard` and forwards click events upward with `movie.id`. On card click, `App` stores `selectedMovieId`, opens `MovieModal`, and fetches `/movie/{movie_id}` details; the response is transformed into a `MovieDetails` object (including runtime and genre names) and passed into `MovieModal` for rendering.
+`App` fetches movie lists from TMDb (Now Playing by default, or Search when a query is submitted), then normalizes each raw movie object into a `MovieSummary` shape used by UI (`id`, `title`, image paths, vote average, release date). When `activeMode` is `'search'`, the search endpoint is used with `searchQuery`; when `activeMode` is `'now_playing'`, the now-playing endpoint is used. Pagination uses `currentPage` and appends results for "Load More" instead of replacing existing items. `App` applies the selected sort option to that array and passes the sorted list to `MovieList`. `MovieList` maps each item to a `MovieCard` and forwards click events upward with `movie.id`. On card click, `App` stores `selectedMovieId`, opens `MovieModal`, and fetches `/movie/{movie_id}` details; the response is transformed into a `MovieDetails` object (including runtime and genre names) and passed into `MovieModal` for rendering.
 
 Simple flow diagram:
 
