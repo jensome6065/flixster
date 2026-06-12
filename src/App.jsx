@@ -1,5 +1,7 @@
 import { useMemo, useEffect, useState } from 'react'
 import './App.css'
+import Footer from './components/Footer'
+import Header from './components/Header'
 import MovieCard from './components/MovieCard'
 import MovieModal from './components/MovieModal'
 import SearchBar from './components/SearchBar'
@@ -177,50 +179,53 @@ const App = () => {
 
   return (
     <div className="App">
-      <h1>Flixster</h1>
-      <SearchBar
-        query={searchQuery}
-        onQueryChange={setSearchQuery}
-        onSubmit={handleSearchSubmit}
-        onClear={handleShowNowPlaying}
-        isLoading={isLoadingList}
-      />
-      <p className="mode-label">
-        Showing: {activeMode === 'search' ? `Search results for "${searchQuery}"` : 'Now Playing'}
-      </p>
-      <div className="sort-row">
-        <label htmlFor="sort-select">Sort by:</label>
-        <select
-          id="sort-select"
-          className="sort-select"
-          value={sortOption}
-          onChange={(event) => setSortOption(event.target.value)}
-        >
-          <option value="title_asc">Title (A-Z)</option>
-          <option value="release_desc">Release Date (Newest)</option>
-          <option value="vote_desc">Vote Average (Highest)</option>
-        </select>
-      </div>
-      {isLoadingList && <p>Loading movies from TMDb...</p>}
-      {listError && <p className="error-message">{listError}</p>}
-      <div className="movie-grid">
-        {sortedMovies.map((movie) => (
-          <MovieCard key={movie.id} movie={movie} onClick={handleMovieClick} />
-        ))}
-      </div>
-      {movies.length === 0 && !isLoadingList && !listError && (
-        <p className="empty-state">No movies found.</p>
-      )}
-      <div className="load-more-row">
-        <button
-          type="button"
-          className="load-more-button"
-          onClick={handleLoadMore}
-          disabled={isLoadingList || !canLoadMore}
-        >
-          {canLoadMore ? 'Load More' : 'No More Movies'}
-        </button>
-      </div>
+      <Header />
+      <main className="app-main">
+        <SearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          onSubmit={handleSearchSubmit}
+          onClear={handleShowNowPlaying}
+          isLoading={isLoadingList}
+        />
+        <p className="mode-label">
+          Showing: {activeMode === 'search' ? `Search results for "${searchQuery}"` : 'Now Playing'}
+        </p>
+        <div className="sort-row">
+          <label htmlFor="sort-select">Sort by:</label>
+          <select
+            id="sort-select"
+            className="sort-select"
+            value={sortOption}
+            onChange={(event) => setSortOption(event.target.value)}
+          >
+            <option value="title_asc">Title (A-Z)</option>
+            <option value="release_desc">Release Date (Newest)</option>
+            <option value="vote_desc">Vote Average (Highest)</option>
+          </select>
+        </div>
+        {isLoadingList && <p>Loading movies from TMDb...</p>}
+        {listError && <p className="error-message">{listError}</p>}
+        <div className="movie-grid">
+          {sortedMovies.map((movie) => (
+            <MovieCard key={movie.id} movie={movie} onClick={handleMovieClick} />
+          ))}
+        </div>
+        {movies.length === 0 && !isLoadingList && !listError && (
+          <p className="empty-state">No movies found.</p>
+        )}
+        <div className="load-more-row">
+          <button
+            type="button"
+            className="load-more-button"
+            onClick={handleLoadMore}
+            disabled={isLoadingList || !canLoadMore}
+          >
+            {canLoadMore ? 'Load More' : 'No More Movies'}
+          </button>
+        </div>
+      </main>
+      <Footer />
       <MovieModal
         movieId={selectedMovieId}
         movieDetails={selectedMovieDetails}
