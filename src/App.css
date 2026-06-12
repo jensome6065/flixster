@@ -1,5 +1,19 @@
 .App {
+  margin: 0 auto;
+  max-width: 1100px;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+.App h1 {
+  margin-bottom: 1.5rem;
   text-align: center;
+}
+
+.movie-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
 
 .App-header {

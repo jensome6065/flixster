@@ -1,0 +1,50 @@
+.movie-card {
+  background: #1d1d1d;
+  border: 1px solid #2e2e2e;
+  border-radius: 12px;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.movie-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.movie-card:focus-visible {
+  outline: 2px solid #7aa2ff;
+  outline-offset: 2px;
+}
+
+.movie-card__poster {
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  width: 100%;
+}
+
+.movie-card__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem;
+}
+
+.movie-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.movie-card__vote,
+.movie-card__release {
+  color: #cfcfcf;
+  font-size: 0.9rem;
+  margin: 0;
+}
