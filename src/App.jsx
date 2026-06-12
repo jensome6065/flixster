@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import './App.css'
 import MovieCard from './components/MovieCard'
 import MovieModal from './components/MovieModal'
@@ -14,6 +14,7 @@ const App = () => {
   const [activeMode, setActiveMode] = useState('now_playing')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [sortOption, setSortOption] = useState('title_asc')
   const [isLoadingList, setIsLoadingList] = useState(false)
   const [listError, setListError] = useState(null)
   const [selectedMovieId, setSelectedMovieId] = useState(null)
@@ -156,6 +157,24 @@ const App = () => {
     fetchMovieDetails()
   }, [apiKey, selectedMovieId])
 
+  const sortedMovies = useMemo(() => {
+    const moviesCopy = [...movies]
+
+    if (sortOption === 'vote_desc') {
+      return moviesCopy.sort(
+        (a, b) => (b.vote_average || 0) - (a.vote_average || 0),
+      )
+    }
+
+    if (sortOption === 'release_desc') {
+      return moviesCopy.sort(
+        (a, b) => new Date(b.release_date || 0) - new Date(a.release_date || 0),
+      )
+    }
+
+    return moviesCopy.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+  }, [movies, sortOption])
+
   return (
     <div className="App">
       <h1>Flixster</h1>
@@ -169,10 +188,23 @@ const App = () => {
       <p className="mode-label">
         Showing: {activeMode === 'search' ? `Search results for "${searchQuery}"` : 'Now Playing'}
       </p>
+      <div className="sort-row">
+        <label htmlFor="sort-select">Sort by:</label>
+        <select
+          id="sort-select"
+          className="sort-select"
+          value={sortOption}
+          onChange={(event) => setSortOption(event.target.value)}
+        >
+          <option value="title_asc">Title (A-Z)</option>
+          <option value="release_desc">Release Date (Newest)</option>
+          <option value="vote_desc">Vote Average (Highest)</option>
+        </select>
+      </div>
       {isLoadingList && <p>Loading movies from TMDb...</p>}
       {listError && <p className="error-message">{listError}</p>}
       <div className="movie-grid">
-        {movies.map((movie) => (
+        {sortedMovies.map((movie) => (
           <MovieCard key={movie.id} movie={movie} onClick={handleMovieClick} />
         ))}
       </div>

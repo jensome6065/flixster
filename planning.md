@@ -190,6 +190,8 @@ All core state is owned by `App` unless noted.
   - **Initial:** `'title_asc'`  
   - **Owner:** `App`  
   - **Updates when:** user changes dropdown in `SortControl`.
+  - **Sort directions:** `title_asc` = title A-Z, `release_desc` = newest to oldest, `vote_desc` = highest to lowest.
+  - **Transformation location:** Sort is applied to a derived copy of `movies` during render (does not mutate list state in place).
 
 - `isLoadingList: boolean`  
   - **Initial:** `false`  

@@ -16,6 +16,28 @@
   text-align: center;
 }
 
+.sort-row {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 0 0 1rem;
+}
+
+.sort-row label {
+  color: #3e3e3e;
+  font-weight: 600;
+}
+
+.sort-select {
+  background: #ffffff;
+  border: 1px solid #b9b9b9;
+  border-radius: 8px;
+  color: #1f1f1f;
+  font-size: 0.95rem;
+  padding: 0.4rem 0.55rem;
+}
+
 .error-message {
   color: #ff7b7b;
   margin: 0 0 1rem;
@@ -98,6 +120,13 @@ Responsive targets:
 
   .search-bar__form {
     flex-direction: column;
+  }
+
+  .sort-row {
+    align-items: stretch;
+    flex-direction: column;
+    margin-inline: auto;
+    max-width: 320px;
   }
 
   .load-more-button {
