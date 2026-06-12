@@ -10,6 +10,7 @@
 .search-bar__input {
   background: #1a1a1a;
   border: 1px solid #383838;
+  box-sizing: border-box;
   border-radius: 8px;
   color: #ffffff;
   flex: 1;
@@ -20,6 +21,7 @@
 .search-bar__button {
   background: #4a7dff;
   border: none;
+  box-sizing: border-box;
   border-radius: 8px;
   color: #ffffff;
   cursor: pointer;
@@ -35,4 +37,16 @@
 .search-bar__button:disabled {
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+@media (max-width: 600px) {
+  .search-bar__form {
+    align-items: stretch;
+  }
+
+  .search-bar__input,
+  .search-bar__button {
+    display: block;
+    width: 100%;
+  }
 }

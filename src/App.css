@@ -11,7 +11,7 @@
 }
 
 .mode-label {
-  color: #d5d5d5;
+  color: #5f5f5f;
   margin: 0 0 1rem;
   text-align: center;
 }
@@ -27,6 +27,12 @@
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
+/*
+Responsive targets:
+- Desktop (>= 1024px): 4 cards per row
+- Tablet (600px - 1023px): 2-3 cards per row
+- Mobile (< 600px): 1 card per row
+*/
 
 .empty-state {
   color: #cfcfcf;
@@ -56,8 +62,46 @@
   opacity: 0.7;
 }
 
+@media (min-width: 1024px) {
+  .movie-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  .App {
+    max-width: 900px;
+  }
+
+  .movie-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
 @media (max-width: 600px) {
+  .App {
+    max-width: 360px;
+    padding: 1.25rem 0.85rem 2rem;
+  }
+
+  .movie-grid {
+    gap: 0.85rem;
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .search-bar {
+    margin-inline: auto;
+    max-width: 320px;
+    width: 100%;
+  }
+
   .search-bar__form {
     flex-direction: column;
+  }
+
+  .load-more-button {
+    max-width: 320px;
+    width: 100%;
   }
 }
