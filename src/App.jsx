@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import MovieCard from './components/MovieCard'
+import MovieModal from './components/MovieModal'
 import SearchBar from './components/SearchBar'
 
 const TMDB_NOW_PLAYING_URL = 'https://api.themoviedb.org/3/movie/now_playing'
 const TMDB_SEARCH_URL = 'https://api.themoviedb.org/3/search/movie'
+const TMDB_MOVIE_DETAILS_URL = 'https://api.themoviedb.org/3/movie'
 
 const App = () => {
   const [movies, setMovies] = useState([])
@@ -12,23 +14,27 @@ const App = () => {
   const [activeMode, setActiveMode] = useState('now_playing')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState(null)
+  const [isLoadingList, setIsLoadingList] = useState(false)
+  const [listError, setListError] = useState(null)
+  const [selectedMovieId, setSelectedMovieId] = useState(null)
+  const [selectedMovieDetails, setSelectedMovieDetails] = useState(null)
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [detailsError, setDetailsError] = useState(null)
 
   const apiKey = import.meta.env.VITE_API_KEY
 
   const fetchMovies = async ({ page, mode, query, append = false }) => {
     if (!apiKey) {
-      setErrorMessage(
-        'Missing TMDb API key. Add VITE_TMDB_API_KEY to your .env file.',
+      setListError(
+        'Missing TMDb API key. Add VITE_API_KEY to your .env file.',
       )
-      setIsLoading(false)
+      setIsLoadingList(false)
       return
     }
 
     try {
-      setIsLoading(true)
-      setErrorMessage(null)
+      setIsLoadingList(true)
+      setListError(null)
 
       const endpoint = mode === 'search' ? TMDB_SEARCH_URL : TMDB_NOW_PLAYING_URL
       const params = new URLSearchParams({
@@ -56,9 +62,9 @@ const App = () => {
       setCurrentPage(page)
       setTotalPages(data.total_pages || 1)
     } catch (error) {
-      setErrorMessage(error.message || 'Unable to load movies right now.')
+      setListError(error.message || 'Unable to load movies right now.')
     } finally {
-      setIsLoading(false)
+      setIsLoadingList(false)
     }
   }
 
@@ -97,8 +103,58 @@ const App = () => {
   const canLoadMore = currentPage < totalPages
 
   const handleMovieClick = (movieId) => {
-    console.log(`Selected movie id: ${movieId}`)
+    setSelectedMovieId(movieId)
   }
+
+  const handleCloseModal = () => {
+    setSelectedMovieId(null)
+    setSelectedMovieDetails(null)
+    setDetailsError(null)
+    setIsLoadingDetails(false)
+  }
+
+  useEffect(() => {
+    if (!selectedMovieId) {
+      return
+    }
+
+    if (!apiKey) {
+      setDetailsError('Missing TMDb API key. Add VITE_API_KEY to your .env file.')
+      return
+    }
+
+    const fetchMovieDetails = async () => {
+      try {
+        setIsLoadingDetails(true)
+        setDetailsError(null)
+
+        const params = new URLSearchParams({
+          api_key: apiKey,
+          language: 'en-US',
+        })
+
+        const response = await fetch(
+          `${TMDB_MOVIE_DETAILS_URL}/${selectedMovieId}?${params.toString()}`,
+        )
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Movie details unavailable (not found).')
+          }
+          throw new Error(`Movie details request failed with status ${response.status}`)
+        }
+
+        const details = await response.json()
+        setSelectedMovieDetails(details)
+      } catch (error) {
+        setDetailsError(error.message || 'Unable to load movie details right now.')
+      } finally {
+        setIsLoadingDetails(false)
+      }
+    }
+
+    fetchMovieDetails()
+  }, [apiKey, selectedMovieId])
 
   return (
     <div className="App">
@@ -108,19 +164,19 @@ const App = () => {
         onQueryChange={setSearchQuery}
         onSubmit={handleSearchSubmit}
         onClear={handleShowNowPlaying}
-        isLoading={isLoading}
+        isLoading={isLoadingList}
       />
       <p className="mode-label">
         Showing: {activeMode === 'search' ? `Search results for "${searchQuery}"` : 'Now Playing'}
       </p>
-      {isLoading && <p>Loading movies from TMDb...</p>}
-      {errorMessage && <p className="error-message">{errorMessage}</p>}
+      {isLoadingList && <p>Loading movies from TMDb...</p>}
+      {listError && <p className="error-message">{listError}</p>}
       <div className="movie-grid">
         {movies.map((movie) => (
           <MovieCard key={movie.id} movie={movie} onClick={handleMovieClick} />
         ))}
       </div>
-      {movies.length === 0 && !isLoading && !errorMessage && (
+      {movies.length === 0 && !isLoadingList && !listError && (
         <p className="empty-state">No movies found.</p>
       )}
       <div className="load-more-row">
@@ -128,11 +184,19 @@ const App = () => {
           type="button"
           className="load-more-button"
           onClick={handleLoadMore}
-          disabled={isLoading || !canLoadMore}
+          disabled={isLoadingList || !canLoadMore}
         >
           {canLoadMore ? 'Load More' : 'No More Movies'}
         </button>
       </div>
+      <MovieModal
+        movieId={selectedMovieId}
+        movieDetails={selectedMovieDetails}
+        isOpen={selectedMovieId !== null}
+        isLoading={isLoadingDetails}
+        error={detailsError}
+        onClose={handleCloseModal}
+      />
     </div>
   )
 }

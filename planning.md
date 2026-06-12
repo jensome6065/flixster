@@ -70,12 +70,14 @@
 - **Responsibility:** Shows expanded details for the selected movie and AI recommendation output.
 - **Renders:** Modal overlay, backdrop image, runtime, genres, release date, overview, AI recommendation block, close button.
 - **Props:**  
+  - `movieId: number | null`  
   - `movieDetails: MovieDetails | null`  
   - `isOpen: boolean`  
   - `onClose: () => void`  
   - `aiRecommendation: string | null`  
   - `aiLoading: boolean`  
   - `aiError: string | null`
+- **Open/Close behavior:** Opens when `App` sets `selectedMovieId` after a `MovieCard` click; closes on close button/backdrop click/Escape key and clears selected movie state in `App`.
 - **State:** May manage UI-only behavior like internal focus trap/escape key handling; data state stays in `App`.
 
 #### `Footer`
