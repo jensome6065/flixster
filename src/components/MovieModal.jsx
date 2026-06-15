@@ -27,7 +27,16 @@ const formatReleaseDate = (releaseDate) => {
   return releaseDate
 }
 
-const MovieModal = ({ movieId, movieDetails, isOpen, isLoading, error, onClose }) => {
+const MovieModal = ({
+  movieId,
+  movieDetails,
+  isOpen,
+  isLoading,
+  error,
+  aiRecommendation,
+  aiLoading,
+  onClose,
+}) => {
   useEffect(() => {
     if (!isOpen) {
       return undefined
@@ -92,6 +101,13 @@ const MovieModal = ({ movieId, movieDetails, isOpen, isLoading, error, onClose }
               </p>
             </div>
             <p className="movie-modal__overview">{movieDetails.overview || 'Overview unavailable.'}</p>
+            <section className="movie-modal__insight" aria-live="polite">
+              <h3 className="movie-modal__insight-title">Watch Recommendation</h3>
+              {aiLoading && <p className="movie-modal__status">Getting a recommendation...</p>}
+              {!aiLoading && aiRecommendation && (
+                <p className="movie-modal__insight-text">{aiRecommendation}</p>
+              )}
+            </section>
           </div>
         )}
         {!isLoading && !error && !movieDetails && (
@@ -120,6 +136,8 @@ MovieModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   isLoading: PropTypes.bool.isRequired,
   error: PropTypes.string,
+  aiRecommendation: PropTypes.string,
+  aiLoading: PropTypes.bool,
   onClose: PropTypes.func.isRequired,
 }
 
@@ -127,6 +145,8 @@ MovieModal.defaultProps = {
   movieId: null,
   movieDetails: null,
   error: null,
+  aiRecommendation: null,
+  aiLoading: false,
 }
 
 export default MovieModal

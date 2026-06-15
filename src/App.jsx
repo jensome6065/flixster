@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react'
+import { useMemo, useEffect, useState, useCallback } from 'react'
 import './App.css'
 import Footer from './components/Footer'
 import Header from './components/Header'
@@ -9,6 +9,14 @@ import SearchBar from './components/SearchBar'
 const TMDB_NOW_PLAYING_URL = 'https://api.themoviedb.org/3/movie/now_playing'
 const TMDB_SEARCH_URL = 'https://api.themoviedb.org/3/search/movie'
 const TMDB_MOVIE_DETAILS_URL = 'https://api.themoviedb.org/3/movie'
+const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions'
+const OPENROUTER_MODELS = [
+  'google/gemma-4-31b-it:free',
+]
+const OPENROUTER_APP_TITLE = 'Flixster Movie Insight'
+const OPENROUTER_APP_URL = 'http://localhost:5173'
+const AI_FALLBACK_MESSAGE =
+  "We couldn't generate a recommendation for this one - check out the overview above!"
 
 const App = () => {
   const [movies, setMovies] = useState([])
@@ -23,8 +31,12 @@ const App = () => {
   const [selectedMovieDetails, setSelectedMovieDetails] = useState(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const [detailsError, setDetailsError] = useState(null)
+  const [aiRecommendation, setAiRecommendation] = useState(null)
+  const [isLoadingAi, setIsLoadingAi] = useState(false)
+  const [aiRecommendationCache, setAiRecommendationCache] = useState({})
 
   const apiKey = import.meta.env.VITE_API_KEY
+  const openRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY
 
   const fetchMovies = async ({ page, mode, query, append = false }) => {
     if (!apiKey) {
@@ -114,6 +126,8 @@ const App = () => {
     setSelectedMovieDetails(null)
     setDetailsError(null)
     setIsLoadingDetails(false)
+    setAiRecommendation(null)
+    setIsLoadingAi(false)
   }
 
   useEffect(() => {
@@ -158,6 +172,113 @@ const App = () => {
 
     fetchMovieDetails()
   }, [apiKey, selectedMovieId])
+
+  const getMovieInsight = useCallback(async (title, genres, overview) => {
+    if (!openRouterApiKey) {
+      throw new Error('Missing OpenRouter API key. Add VITE_OPENROUTER_API_KEY to your .env file.')
+    }
+
+    let lastError = null
+
+    for (const model of OPENROUTER_MODELS) {
+      const response = await fetch(OPENROUTER_CHAT_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${openRouterApiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': OPENROUTER_APP_URL,
+          'X-Title': OPENROUTER_APP_TITLE,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are an enthusiastic but honest film critic. Write spoiler-free watch guidance in plain text. Use 2-3 sentences, avoid first-person statements, avoid generic hype like "must-see", and do not invent details not provided.',
+            },
+            {
+              role: 'user',
+              content: `Write a short watch recommendation for this movie.
+Title: ${title}
+Genres: ${genres}
+Overview: ${overview}
+
+Focus on who this movie is for and what kind of evening watch experience it offers. Keep it plain text and spoiler-free.`,
+            },
+          ],
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        const apiMessage =
+          data?.error?.message || data?.message || `OpenRouter request failed with status ${response.status}`
+        lastError = new Error(apiMessage)
+        continue
+      }
+
+      const content = data?.choices?.[0]?.message?.content?.trim()
+
+      if (!content) {
+        lastError = new Error('OpenRouter returned an empty recommendation.')
+        continue
+      }
+
+      return content
+    }
+
+    throw lastError || new Error('OpenRouter could not return a recommendation.')
+  }, [openRouterApiKey])
+
+  useEffect(() => {
+    if (!selectedMovieId || !selectedMovieDetails || detailsError) {
+      return
+    }
+
+    let cancelled = false
+
+    const fetchAiRecommendation = async () => {
+      const genres = selectedMovieDetails.genres?.map((genre) => genre.name).join(', ') || 'Unknown'
+      const overview = selectedMovieDetails.overview || 'Overview unavailable.'
+      const cacheKey = String(selectedMovieId)
+
+      if (aiRecommendationCache[cacheKey]) {
+        setAiRecommendation(aiRecommendationCache[cacheKey])
+        setIsLoadingAi(false)
+        return
+      }
+
+      try {
+        setIsLoadingAi(true)
+        setAiRecommendation(null)
+
+        const insight = await getMovieInsight(selectedMovieDetails.title, genres, overview)
+        if (!cancelled) {
+          setAiRecommendation(insight)
+          setAiRecommendationCache((prevCache) => ({
+            ...prevCache,
+            [cacheKey]: insight,
+          }))
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setAiRecommendation(AI_FALLBACK_MESSAGE)
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingAi(false)
+        }
+      }
+    }
+
+    fetchAiRecommendation()
+
+    return () => {
+      cancelled = true
+    }
+  }, [aiRecommendationCache, detailsError, getMovieInsight, selectedMovieDetails, selectedMovieId])
 
   const sortedMovies = useMemo(() => {
     const moviesCopy = [...movies]
@@ -232,6 +353,8 @@ const App = () => {
         isOpen={selectedMovieId !== null}
         isLoading={isLoadingDetails}
         error={detailsError}
+        aiRecommendation={aiRecommendation}
+        aiLoading={isLoadingAi}
         onClose={handleCloseModal}
       />
     </div>

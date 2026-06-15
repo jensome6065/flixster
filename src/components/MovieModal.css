@@ -79,6 +79,30 @@
   margin-top: 0.8rem;
 }
 
+.movie-modal__insight {
+  border-top: 1px solid var(--color-border);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.movie-modal__insight-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.movie-modal__insight-text {
+  color: var(--color-text);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.movie-modal__insight-note {
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  margin: 0.6rem 0 0;
+}
+
 .movie-modal__status {
   color: var(--color-text-muted);
   margin-top: 2rem;

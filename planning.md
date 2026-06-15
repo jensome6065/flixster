@@ -237,20 +237,49 @@ Simple flow diagram:
 `TMDb list endpoint -> App fetch/transform -> sorted movies state -> MovieList -> MovieCard`  
 `MovieCard click(movieId) -> App selectedMovieId -> TMDb details endpoint -> App details state -> MovieModal`
 
-## 5) AI Feature Spec (Milestone 8 Preview)
+## 5) AI Feature Spec (Milestone 8 Final)
 
-- **Display component:** `MovieModal` will render an "AI Watch Recommendation" section beneath movie overview/details.
-- **AI input context:** `title`, `genres` (names), and `overview` from `selectedMovieDetails`.
-- **AI task/output:** Return a concise 2-3 sentence recommendation explaining who might enjoy the movie and why, in plain language.
-- **Role/task prompt shape:**  
-  - Role: movie recommendation assistant.  
-  - Task: produce brief, spoiler-free recommendation with confidence tone.  
-  - Constraints: avoid fabricated plot details not present in context; max ~80 words.
-- **State location:** `aiRecommendation`, `isLoadingAi`, and `aiError` live in `App` and are passed down to `MovieModal`.
-- **Failure behavior:** If AI call fails or times out, modal shows a graceful fallback message such as "Recommendation unavailable right now. Please try again."
-- **Trigger:** AI request starts after movie details are successfully loaded and modal is open.
+- **Display component:** `MovieModal` renders a dedicated "Watch Recommendation" block below the movie overview.
+- **State location:** AI state lives in `App` and is passed down to `MovieModal`.
+  - `aiRecommendation: string | null` (initial `null`)
+  - `isLoadingAi: boolean` (initial `false`)
+  - `aiError: string | null` (initial `null`, optional debug/status)
+- **Trigger:** Start AI generation in a `useEffect` when modal is open and movie details are loaded (`selectedMovieId` + `selectedMovieDetails` available). Reset AI state on modal close.
+- **OpenRouter endpoint/model:**
+  - Endpoint: `https://openrouter.ai/api/v1/chat/completions`
+  - Model: `meta-llama/llama-3.3-70b-instruct:free`
+  - API key env var: `VITE_OPENROUTER_API_KEY`
 
-## 6) Milestone 7 Visual Intent
+### Prompt Spec
+
+- **Role (system message):** "You are an enthusiastic but honest film critic writing quick, spoiler-free watch guidance."
+- **Task (user message):** Generate a 2-3 sentence watch recommendation based only on provided movie context.
+- **Inputs sent to AI:**
+  - `title`
+  - `genres` (comma-separated string)
+  - `overview`
+- **Output format requirements:**
+  - Plain text only (no bullets, no markdown)
+  - 2-3 sentences
+  - No first-person phrasing ("I think", "I'd say")
+  - Should highlight tone/audience fit and whether it is a good evening watch
+- **Constraints:**
+  - No plot spoilers beyond the given overview
+  - Do not invent facts not present in provided context
+  - Avoid generic filler phrases like "must-see" or "for everyone"
+  - Avoid unnecessary comparisons to other movies unless truly helpful
+- **Failure behavior (user-facing):**
+  - If request fails, model response is empty, or API key is missing, show:
+  - `"We couldn't generate a recommendation for this one - check out the overview above!"`
+
+### AI Feature — Decisions Log
+
+- **What the API returned initially:** Without a configured OpenRouter key, the request path correctly falls back to the friendly fallback message instead of breaking modal rendering.
+- **What I changed in my prompt:** Tightened the system/user instructions to enforce 2-3 sentences, no spoilers, no first-person language, and no generic "must-see" style phrasing.
+- **What fallback behavior I implemented:** Users always see a stable recommendation section; on failure they see the fallback message and can still read full movie details.
+- **What I learned:** For async AI features in React, separating `isLoadingAi` from `aiRecommendation` and resetting both on close keeps each modal open deterministic and prevents stale text from prior movies.
+
+## 6) Milestone 7: Visual Intent
 
 - **App shell intent:** Use a cinema-inspired dark theme with strong contrast, centered content, and clear vertical rhythm so browsing feels focused and calm.
 - **Typography intent:** Use one display font for headings and one readable sans-serif for body copy, with consistent type scale between title, section labels, and metadata.
