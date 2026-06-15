@@ -19,6 +19,8 @@ const OPENROUTER_APP_URL = 'http://localhost:5173'
 const AI_FALLBACK_MESSAGE =
   "We couldn't generate a recommendation for this one - check out the overview above!"
 const DESKTOP_HOVER_QUERY = '(hover: hover) and (pointer: fine) and (min-width: 1024px)'
+const FEATURED_ROTATION_INTERVAL_MS = 9000
+const FEATURED_CROSSFADE_DURATION_MS = 560
 
 const App = () => {
   const [movies, setMovies] = useState([])
@@ -43,7 +45,10 @@ const App = () => {
   const [hoveredMovieId, setHoveredMovieId] = useState(null)
   const [isDesktopHoverPreviewEnabled, setIsDesktopHoverPreviewEnabled] = useState(false)
   const [hoverPreview, setHoverPreview] = useState(null)
+  const [featuredMovieIndex, setFeaturedMovieIndex] = useState(0)
+  const [featuredTransitionFromIndex, setFeaturedTransitionFromIndex] = useState(null)
   const hoverPreviewTimeoutRef = useRef(null)
+  const featuredTransitionTimeoutRef = useRef(null)
 
   const apiKey = import.meta.env.VITE_API_KEY
   const openRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY
@@ -116,6 +121,9 @@ const App = () => {
     return () => {
       if (hoverPreviewTimeoutRef.current) {
         window.clearTimeout(hoverPreviewTimeoutRef.current)
+      }
+      if (featuredTransitionTimeoutRef.current) {
+        window.clearTimeout(featuredTransitionTimeoutRef.current)
       }
     }
   }, [])
@@ -268,7 +276,8 @@ const App = () => {
     const movieKey = String(movie.id)
     setFavoriteMoviesById((previousFavorites) => {
       if (previousFavorites[movieKey]) {
-        const { [movieKey]: _removedMovie, ...remainingFavorites } = previousFavorites
+        const remainingFavorites = { ...previousFavorites }
+        delete remainingFavorites[movieKey]
         return remainingFavorites
       }
 
@@ -283,7 +292,8 @@ const App = () => {
     const movieKey = String(movie.id)
     setWatchedMoviesById((previousWatched) => {
       if (previousWatched[movieKey]) {
-        const { [movieKey]: _removedMovie, ...remainingWatched } = previousWatched
+        const remainingWatched = { ...previousWatched }
+        delete remainingWatched[movieKey]
         return remainingWatched
       }
 
@@ -479,6 +489,70 @@ Focus on who this movie is for and what kind of evening watch experience it offe
     return moviesCopy.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
   }, [movies, sortOption])
 
+  const featuredMovies = useMemo(() => {
+    if (activeMode !== 'now_playing') {
+      return []
+    }
+
+    return [...movies]
+      .filter((movie) => typeof movie.vote_average === 'number')
+      .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
+      .slice(0, 6)
+  }, [activeMode, movies])
+
+  useEffect(() => {
+    setFeaturedMovieIndex(0)
+    setFeaturedTransitionFromIndex(null)
+  }, [featuredMovies.length])
+
+  const featuredMovie = featuredMovies[featuredMovieIndex] || null
+  const featuredTransitionFromMovie = featuredTransitionFromIndex === null
+    ? null
+    : featuredMovies[featuredTransitionFromIndex] || null
+
+  const transitionToFeaturedIndex = useCallback((nextIndex) => {
+    if (
+      featuredMovies.length === 0
+      || nextIndex < 0
+      || nextIndex >= featuredMovies.length
+      || nextIndex === featuredMovieIndex
+    ) {
+      return
+    }
+
+    setFeaturedTransitionFromIndex(featuredMovieIndex)
+    setFeaturedMovieIndex(nextIndex)
+
+    if (featuredTransitionTimeoutRef.current) {
+      window.clearTimeout(featuredTransitionTimeoutRef.current)
+    }
+
+    featuredTransitionTimeoutRef.current = window.setTimeout(() => {
+      setFeaturedTransitionFromIndex(null)
+    }, FEATURED_CROSSFADE_DURATION_MS)
+  }, [featuredMovieIndex, featuredMovies.length])
+
+  useEffect(() => {
+    if (!featuredMovie?.id) {
+      return
+    }
+    fetchMovieTrailerKey(featuredMovie.id)
+  }, [featuredMovie?.id, fetchMovieTrailerKey])
+
+  useEffect(() => {
+    if (featuredMovies.length <= 1) {
+      return undefined
+    }
+
+    const rotationId = window.setInterval(() => {
+      transitionToFeaturedIndex((featuredMovieIndex + 1) % featuredMovies.length)
+    }, FEATURED_ROTATION_INTERVAL_MS)
+
+    return () => {
+      window.clearInterval(rotationId)
+    }
+  }, [featuredMovieIndex, featuredMovies.length, transitionToFeaturedIndex])
+
   const favoritedMovies = useMemo(
     () =>
       Object.values(favoriteMoviesById).sort((a, b) =>
@@ -498,9 +572,84 @@ Focus on who this movie is for and what kind of evening watch experience it offe
   const selectedMovieTrailerKey = selectedMovieId
     ? trailerKeysByMovieId[String(selectedMovieId)] ?? null
     : null
+  const featuredTrailerKey = featuredMovie?.id
+    ? trailerKeysByMovieId[String(featuredMovie.id)] ?? null
+    : null
+  const featuredTrailerUrl = featuredTrailerKey
+    ? `https://www.youtube.com/embed/${featuredTrailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${featuredTrailerKey}`
+    : null
+  const featuredTransitionFromTrailerKey = featuredTransitionFromMovie?.id
+    ? trailerKeysByMovieId[String(featuredTransitionFromMovie.id)] ?? null
+    : null
+  const featuredTransitionFromTrailerUrl = featuredTransitionFromTrailerKey
+    ? `https://www.youtube.com/embed/${featuredTransitionFromTrailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${featuredTransitionFromTrailerKey}`
+    : null
   const hoverPreviewTrailerUrl = hoverPreview?.trailerKey
     ? `https://www.youtube.com/embed/${hoverPreview.trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${hoverPreview.trailerKey}`
     : null
+
+  const renderFeaturedSlide = (movie, trailerUrl, isEntering = false, isLeaving = false) => (
+    <div
+      className={`featured-banner ${isEntering ? 'featured-banner--entering' : ''} ${isLeaving ? 'featured-banner--leaving' : ''}`.trim()}
+      key={`${movie.id}-${isEntering ? 'enter' : isLeaving ? 'leave' : 'current'}`}
+    >
+      <div className="featured-banner__background">
+        <img
+          className="featured-banner__background-image"
+          src={
+            movie.backdrop_path
+              ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`
+              : 'https://via.placeholder.com/1280x720?text=Backdrop+Unavailable'
+          }
+          alt=""
+          aria-hidden="true"
+        />
+        <div className="featured-banner__overlay" aria-hidden="true" />
+      </div>
+      <div className="featured-banner__content">
+        <p className="featured-banner__label">Featured</p>
+        <h2 className="featured-banner__title">{movie.title}</h2>
+        <p className="featured-banner__meta">
+          Rating {movie.vote_average?.toFixed(1) || 'N/A'}
+          {movie.release_date ? ` • ${movie.release_date}` : ''}
+        </p>
+        <p className="featured-banner__overview">
+          {movie.overview || 'No overview available for this title yet.'}
+        </p>
+        <div className="featured-banner__actions">
+          <button
+            type="button"
+            className="featured-banner__action featured-banner__action--primary"
+            onClick={() => handleMovieClick(movie.id)}
+          >
+            More Info
+          </button>
+        </div>
+      </div>
+      <div className="featured-banner__media">
+        {trailerUrl ? (
+          <iframe
+            className="featured-banner__trailer"
+            src={trailerUrl}
+            title={`${movie.title} featured trailer`}
+            allow="autoplay; encrypted-media; picture-in-picture"
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        ) : (
+          <img
+            className="featured-banner__fallback"
+            src={
+              movie.backdrop_path
+                ? `https://image.tmdb.org/t/p/w780${movie.backdrop_path}`
+                : 'https://via.placeholder.com/780x439?text=Trailer+Unavailable'
+            }
+            alt={`${movie.title} trailer unavailable`}
+          />
+        )}
+      </div>
+    </div>
+  )
 
   return (
     <div className="App">
@@ -508,6 +657,65 @@ Focus on who this movie is for and what kind of evening watch experience it offe
       <main className="app-main">
         <div className={`app-layout ${isSidebarVisible ? '' : 'app-layout--full'}`.trim()}>
           <section className="app-content">
+            {featuredMovie && (
+              <section className="featured-banner-shell" aria-label="Featured now playing movie">
+                <button
+                  type="button"
+                  className="featured-banner-nav featured-banner-nav--left"
+                  onClick={() =>
+                    transitionToFeaturedIndex(
+                      featuredMovieIndex === 0 ? featuredMovies.length - 1 : featuredMovieIndex - 1,
+                    )
+                  }
+                  disabled={featuredMovies.length < 2}
+                  aria-label="Show previous featured movie"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M15 6 9 12l6 6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                <div className="featured-banner-viewport">
+                  {featuredTransitionFromMovie
+                    && renderFeaturedSlide(
+                      featuredTransitionFromMovie,
+                      featuredTransitionFromTrailerUrl,
+                      false,
+                      true,
+                    )}
+                  {renderFeaturedSlide(
+                    featuredMovie,
+                    featuredTrailerUrl,
+                    featuredTransitionFromMovie !== null,
+                    false,
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="featured-banner-nav featured-banner-nav--right"
+                  onClick={() => transitionToFeaturedIndex((featuredMovieIndex + 1) % featuredMovies.length)}
+                  disabled={featuredMovies.length < 2}
+                  aria-label="Show next featured movie"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="m9 6 6 6-6 6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </section>
+            )}
             <SearchBar
               query={searchQuery}
               onQueryChange={setSearchQuery}
