@@ -24,10 +24,15 @@ const formatReleaseDate = (releaseDate) => {
 const MovieCard = ({
   movie,
   onClick,
+  onHoverStart,
+  onHoverEnd,
   onFavoriteToggle,
   isFavorite,
   onWatchedToggle,
   isWatched,
+  trailerKey,
+  isPreviewPlaying,
+  isDimmed,
 }) => {
   const { id, title, poster_path: posterPath, vote_average: voteAverage, release_date: releaseDate } = movie
 
@@ -56,11 +61,19 @@ const MovieCard = ({
     onWatchedToggle(movie)
   }
 
+  const trailerPreviewUrl = trailerKey
+    ? `https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${trailerKey}`
+    : null
+
   return (
     <article
-      className={`movie-card ${isFavorite ? 'movie-card--favorite' : ''} ${isWatched ? 'movie-card--watched' : ''}`}
+      className={`movie-card ${isFavorite ? 'movie-card--favorite' : ''} ${isWatched ? 'movie-card--watched' : ''} ${isPreviewPlaying ? 'movie-card--previewing' : ''} ${isDimmed ? 'movie-card--dimmed' : ''}`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
+      onMouseEnter={(event) => onHoverStart(movie, event.currentTarget)}
+      onMouseLeave={() => onHoverEnd(id)}
+      onFocus={(event) => onHoverStart(movie, event.currentTarget)}
+      onBlur={() => onHoverEnd(id)}
       role="button"
       tabIndex={0}
       aria-label={`View details for ${title}`}
@@ -107,7 +120,26 @@ const MovieCard = ({
           />
         </svg>
       </button>
-      <img className="movie-card__poster" src={posterUrl} alt={`${title} poster`} />
+      <div className="movie-card__media">
+        <img className="movie-card__poster" src={posterUrl} alt={`${title} poster`} />
+        {isPreviewPlaying && trailerPreviewUrl && (
+          <>
+            <iframe
+              className="movie-card__trailer-preview"
+              src={trailerPreviewUrl}
+              title={`${title} trailer preview`}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
+              tabIndex={-1}
+            />
+            <div className="movie-card__projector-overlay" aria-hidden="true" />
+            <span className="movie-card__now-playing" aria-hidden="true">
+              Now Playing
+            </span>
+          </>
+        )}
+      </div>
       <div className="movie-card__content">
         <h3 className="movie-card__title">{title}</h3>
         <p className="movie-card__vote">Vote Average: {formatVoteAverage(voteAverage)}</p>
@@ -126,10 +158,15 @@ MovieCard.propTypes = {
     release_date: PropTypes.string,
   }).isRequired,
   onClick: PropTypes.func.isRequired,
+  onHoverStart: PropTypes.func.isRequired,
+  onHoverEnd: PropTypes.func.isRequired,
   onFavoriteToggle: PropTypes.func.isRequired,
   isFavorite: PropTypes.bool.isRequired,
   onWatchedToggle: PropTypes.func.isRequired,
   isWatched: PropTypes.bool.isRequired,
+  trailerKey: PropTypes.string,
+  isPreviewPlaying: PropTypes.bool.isRequired,
+  isDimmed: PropTypes.bool.isRequired,
 }
 
 export default MovieCard

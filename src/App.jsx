@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState, useCallback } from 'react'
+import { useMemo, useEffect, useState, useCallback, useRef } from 'react'
 import './App.css'
 import Footer from './components/Footer'
 import Header from './components/Header'
@@ -18,6 +18,7 @@ const OPENROUTER_APP_TITLE = 'Flixster Movie Insight'
 const OPENROUTER_APP_URL = 'http://localhost:5173'
 const AI_FALLBACK_MESSAGE =
   "We couldn't generate a recommendation for this one - check out the overview above!"
+const DESKTOP_HOVER_QUERY = '(hover: hover) and (pointer: fine) and (min-width: 1024px)'
 
 const App = () => {
   const [movies, setMovies] = useState([])
@@ -38,6 +39,11 @@ const App = () => {
   const [favoriteMoviesById, setFavoriteMoviesById] = useState({})
   const [watchedMoviesById, setWatchedMoviesById] = useState({})
   const [isSidebarVisible, setIsSidebarVisible] = useState(false)
+  const [trailerKeysByMovieId, setTrailerKeysByMovieId] = useState({})
+  const [hoveredMovieId, setHoveredMovieId] = useState(null)
+  const [isDesktopHoverPreviewEnabled, setIsDesktopHoverPreviewEnabled] = useState(false)
+  const [hoverPreview, setHoverPreview] = useState(null)
+  const hoverPreviewTimeoutRef = useRef(null)
 
   const apiKey = import.meta.env.VITE_API_KEY
   const openRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY
@@ -92,6 +98,28 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(DESKTOP_HOVER_QUERY)
+    const syncDesktopPreviewSupport = () => {
+      setIsDesktopHoverPreviewEnabled(mediaQuery.matches)
+    }
+
+    syncDesktopPreviewSupport()
+    mediaQuery.addEventListener('change', syncDesktopPreviewSupport)
+
+    return () => {
+      mediaQuery.removeEventListener('change', syncDesktopPreviewSupport)
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (hoverPreviewTimeoutRef.current) {
+        window.clearTimeout(hoverPreviewTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const handleSearchSubmit = () => {
     const trimmedQuery = searchQuery.trim()
     if (!trimmedQuery) {
@@ -123,6 +151,117 @@ const App = () => {
 
   const handleMovieClick = (movieId) => {
     setSelectedMovieId(movieId)
+  }
+
+  const getPreferredTrailerKey = useCallback((videos = []) => {
+    const youtubeVideos = videos.filter((video) => video.site === 'YouTube' && video.key)
+    const trailerCandidates = youtubeVideos.filter((video) => video.type === 'Trailer')
+    const teaserCandidates = youtubeVideos.filter((video) => video.type === 'Teaser')
+
+    const sortedCandidates = [...trailerCandidates, ...teaserCandidates].sort((a, b) => {
+      const officialScore = Number(Boolean(b.official)) - Number(Boolean(a.official))
+      if (officialScore !== 0) {
+        return officialScore
+      }
+      return new Date(b.published_at || 0) - new Date(a.published_at || 0)
+    })
+
+    return sortedCandidates[0]?.key || null
+  }, [])
+
+  const fetchMovieTrailerKey = useCallback(async (movieId) => {
+    if (!movieId || !apiKey) {
+      return null
+    }
+
+    const movieKey = String(movieId)
+    if (Object.prototype.hasOwnProperty.call(trailerKeysByMovieId, movieKey)) {
+      return trailerKeysByMovieId[movieKey]
+    }
+
+    try {
+      const params = new URLSearchParams({
+        api_key: apiKey,
+        language: 'en-US',
+      })
+      const response = await fetch(
+        `${TMDB_MOVIE_DETAILS_URL}/${movieId}/videos?${params.toString()}`,
+      )
+
+      if (!response.ok) {
+        throw new Error(`Trailer request failed with status ${response.status}`)
+      }
+
+      const data = await response.json()
+      const trailerKey = getPreferredTrailerKey(data.results || [])
+      setTrailerKeysByMovieId((previous) => ({
+        ...previous,
+        [movieKey]: trailerKey,
+      }))
+      return trailerKey
+    } catch (_error) {
+      setTrailerKeysByMovieId((previous) => ({
+        ...previous,
+        [movieKey]: null,
+      }))
+      return null
+    }
+  }, [apiKey, getPreferredTrailerKey, trailerKeysByMovieId])
+
+  const handleMovieHoverStart = async (movie, cardElement) => {
+    if (!movie?.id) {
+      return
+    }
+
+    setHoveredMovieId(movie.id)
+    setHoverPreview(null)
+
+    if (hoverPreviewTimeoutRef.current) {
+      window.clearTimeout(hoverPreviewTimeoutRef.current)
+    }
+
+    if (!isDesktopHoverPreviewEnabled) {
+      fetchMovieTrailerKey(movie.id)
+      return
+    }
+
+    hoverPreviewTimeoutRef.current = window.setTimeout(async () => {
+      const trailerKey = await fetchMovieTrailerKey(movie.id)
+      if (!trailerKey) {
+        return
+      }
+
+      const rect = cardElement?.getBoundingClientRect()
+      const panelWidth = 540
+      const panelHeight = 340
+      const leftGuess = rect ? rect.left + rect.width / 2 - panelWidth / 2 : 24
+      const topGuess = rect ? rect.top - 18 : 24
+      const clampedLeft = Math.max(16, Math.min(leftGuess, window.innerWidth - panelWidth - 16))
+      const clampedTop = Math.max(16, Math.min(topGuess, window.innerHeight - panelHeight - 16))
+
+      setHoverPreview({
+        movieId: movie.id,
+        title: movie.title,
+        voteAverage: movie.vote_average,
+        trailerKey,
+        top: clampedTop,
+        left: clampedLeft,
+      })
+    }, 260)
+  }
+
+  const handleMovieHoverEnd = (movieId) => {
+    if (hoverPreviewTimeoutRef.current) {
+      window.clearTimeout(hoverPreviewTimeoutRef.current)
+      hoverPreviewTimeoutRef.current = null
+    }
+
+    setHoveredMovieId((currentHoveredMovieId) =>
+      currentHoveredMovieId === movieId ? null : currentHoveredMovieId,
+    )
+    setHoverPreview((currentPreview) =>
+      currentPreview?.movieId === movieId ? null : currentPreview,
+    )
   }
 
   const handleFavoriteToggle = (movie) => {
@@ -162,6 +301,7 @@ const App = () => {
     setIsLoadingDetails(false)
     setAiRecommendation(null)
     setIsLoadingAi(false)
+    setHoverPreview(null)
   }
 
   useEffect(() => {
@@ -206,6 +346,13 @@ const App = () => {
 
     fetchMovieDetails()
   }, [apiKey, selectedMovieId])
+
+  useEffect(() => {
+    if (!selectedMovieId) {
+      return
+    }
+    fetchMovieTrailerKey(selectedMovieId)
+  }, [fetchMovieTrailerKey, selectedMovieId])
 
   const getMovieInsight = useCallback(async (title, genres, overview) => {
     if (!openRouterApiKey) {
@@ -348,6 +495,13 @@ Focus on who this movie is for and what kind of evening watch experience it offe
     [watchedMoviesById],
   )
 
+  const selectedMovieTrailerKey = selectedMovieId
+    ? trailerKeysByMovieId[String(selectedMovieId)] ?? null
+    : null
+  const hoverPreviewTrailerUrl = hoverPreview?.trailerKey
+    ? `https://www.youtube.com/embed/${hoverPreview.trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${hoverPreview.trailerKey}`
+    : null
+
   return (
     <div className="App">
       <Header />
@@ -394,10 +548,15 @@ Focus on who this movie is for and what kind of evening watch experience it offe
                   key={movie.id}
                   movie={movie}
                   onClick={handleMovieClick}
+                  onHoverStart={handleMovieHoverStart}
+                  onHoverEnd={handleMovieHoverEnd}
                   onFavoriteToggle={handleFavoriteToggle}
                   isFavorite={Boolean(favoriteMoviesById[String(movie.id)])}
                   onWatchedToggle={handleWatchedToggle}
                   isWatched={Boolean(watchedMoviesById[String(movie.id)])}
+                  trailerKey={trailerKeysByMovieId[String(movie.id)] ?? null}
+                  isPreviewPlaying={!isDesktopHoverPreviewEnabled && hoveredMovieId === movie.id}
+                  isDimmed={hoveredMovieId !== null && hoveredMovieId !== movie.id}
                 />
               ))}
             </div>
@@ -425,6 +584,31 @@ Focus on who this movie is for and what kind of evening watch experience it offe
           )}
         </div>
       </main>
+      {isDesktopHoverPreviewEnabled && hoverPreview && hoverPreviewTrailerUrl && (
+        <div
+          className="hover-preview-panel"
+          style={{ top: `${hoverPreview.top}px`, left: `${hoverPreview.left}px` }}
+          aria-hidden="true"
+        >
+          <iframe
+            className="hover-preview-panel__iframe"
+            src={hoverPreviewTrailerUrl}
+            title={`${hoverPreview.title} projected preview`}
+            allow="autoplay; encrypted-media; picture-in-picture"
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+            tabIndex={-1}
+          />
+          <div className="hover-preview-panel__meta">
+            <strong>{hoverPreview.title}</strong>
+            <span>
+              {typeof hoverPreview.voteAverage === 'number'
+                ? `Rating ${hoverPreview.voteAverage.toFixed(1)}`
+                : 'Trailer Preview'}
+            </span>
+          </div>
+        </div>
+      )}
       <Footer />
       <MovieModal
         movieId={selectedMovieId}
@@ -434,6 +618,7 @@ Focus on who this movie is for and what kind of evening watch experience it offe
         error={detailsError}
         aiRecommendation={aiRecommendation}
         aiLoading={isLoadingAi}
+        trailerKey={selectedMovieTrailerKey}
         onClose={handleCloseModal}
       />
     </div>

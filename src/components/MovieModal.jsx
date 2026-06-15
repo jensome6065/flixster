@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import './MovieModal.css'
 
@@ -35,8 +35,11 @@ const MovieModal = ({
   error,
   aiRecommendation,
   aiLoading,
+  trailerKey,
   onClose,
 }) => {
+  const [activeTab, setActiveTab] = useState('info')
+
   useEffect(() => {
     if (!isOpen) {
       return undefined
@@ -52,13 +55,23 @@ const MovieModal = ({
     return () => window.removeEventListener('keydown', handleEscapeKey)
   }, [isOpen, onClose])
 
-  if (!isOpen) {
-    return null
-  }
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+    setActiveTab('info')
+  }, [isOpen, movieId])
 
   const backdropUrl = movieDetails?.backdrop_path
     ? `${TMDB_BACKDROP_BASE_URL}${movieDetails.backdrop_path}`
     : FALLBACK_BACKDROP
+  const trailerUrl = trailerKey
+    ? `https://www.youtube.com/embed/${trailerKey}?autoplay=1&controls=1&modestbranding=1&playsinline=1&rel=0`
+    : null
+
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className="movie-modal-overlay" role="presentation" onClick={onClose}>
@@ -89,6 +102,44 @@ const MovieModal = ({
             <h2 id="movie-modal-title" className="movie-modal__title">
               {movieDetails.title}
             </h2>
+            <div className="movie-modal__tabs" role="tablist" aria-label="Movie modal sections">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'info'}
+                className={`movie-modal__tab-button ${activeTab === 'info' ? 'is-active' : ''}`}
+                onClick={() => setActiveTab('info')}
+              >
+                Info
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'trailer'}
+                className={`movie-modal__tab-button ${activeTab === 'trailer' ? 'is-active' : ''}`}
+                onClick={() => setActiveTab('trailer')}
+                disabled={!trailerUrl}
+              >
+                Trailer
+              </button>
+            </div>
+            {activeTab === 'trailer' && trailerUrl ? (
+              <div className="movie-modal__trailer-wrap">
+                <iframe
+                  className="movie-modal__trailer"
+                  src={trailerUrl}
+                  title={`${movieDetails.title} trailer`}
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
+            ) : null}
+            {activeTab === 'trailer' && !trailerUrl ? (
+              <p className="movie-modal__status">No trailer is available for this movie.</p>
+            ) : null}
+            {activeTab === 'info' ? (
+              <>
             <div className="movie-modal__metadata">
               <p>
                 <strong>Runtime:</strong> {formatRuntime(movieDetails.runtime)}
@@ -108,6 +159,8 @@ const MovieModal = ({
                 <p className="movie-modal__insight-text">{aiRecommendation}</p>
               )}
             </section>
+              </>
+            ) : null}
           </div>
         )}
         {!isLoading && !error && !movieDetails && (
@@ -138,6 +191,7 @@ MovieModal.propTypes = {
   error: PropTypes.string,
   aiRecommendation: PropTypes.string,
   aiLoading: PropTypes.bool,
+  trailerKey: PropTypes.string,
   onClose: PropTypes.func.isRequired,
 }
 
@@ -147,6 +201,7 @@ MovieModal.defaultProps = {
   error: null,
   aiRecommendation: null,
   aiLoading: false,
+  trailerKey: null,
 }
 
 export default MovieModal
