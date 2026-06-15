@@ -2,13 +2,43 @@
   display: flex;
   flex-direction: column;
   margin: 0 auto;
-  max-width: 1120px;
+  max-width: 1320px;
   min-height: 100vh;
-  padding: 2rem 1rem 2.5rem;
+  padding: 2rem 1.25rem 2.5rem;
+  width: 100%;
 }
 
 .app-main {
   flex: 1;
+}
+
+.app-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-areas: 'content sidebar';
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+.app-layout--full {
+  grid-template-areas: 'content';
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app-content {
+  grid-area: content;
+  min-width: 0;
+}
+
+.app-sidebar {
+  grid-area: sidebar;
+}
+
+.controls-row {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin: 0 0 1.2rem;
 }
 
 .mode-label {
@@ -22,7 +52,7 @@
   display: flex;
   gap: 0.5rem;
   justify-content: center;
-  margin: 0 0 1.2rem;
+  margin: 0;
 }
 
 .sort-row label {
@@ -40,6 +70,26 @@
 }
 
 .sort-select:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.sidebar-toggle-button {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.45rem 0.75rem;
+}
+
+.sidebar-toggle-button:hover {
+  background: var(--color-accent-hover);
+}
+
+.sidebar-toggle-button:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
@@ -105,11 +155,22 @@ Responsive targets:
   .movie-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  .movie-grid--with-sidebar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 1023px) {
-  .App {
-    max-width: 900px;
+  .app-layout {
+    grid-template-areas:
+      'sidebar'
+      'content';
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-layout--full {
+    grid-template-areas: 'content';
   }
 
   .movie-grid {
@@ -119,7 +180,6 @@ Responsive targets:
 
 @media (max-width: 600px) {
   .App {
-    max-width: 360px;
     padding: 1.25rem 0.85rem 2rem;
   }
 
@@ -146,7 +206,18 @@ Responsive targets:
     max-width: 320px;
   }
 
+  .controls-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .load-more-button {
+    max-width: 320px;
+    width: 100%;
+  }
+
+  .sidebar-toggle-button {
+    margin-inline: auto;
     max-width: 320px;
     width: 100%;
   }

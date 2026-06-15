@@ -48,12 +48,12 @@ const MovieCard = ({
 
   const handleFavoriteClick = (event) => {
     event.stopPropagation()
-    onFavoriteToggle(id)
+    onFavoriteToggle(movie)
   }
 
   const handleWatchedClick = (event) => {
     event.stopPropagation()
-    onWatchedToggle(id)
+    onWatchedToggle(movie)
   }
 
   return (

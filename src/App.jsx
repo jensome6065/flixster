@@ -5,6 +5,7 @@ import Header from './components/Header'
 import MovieCard from './components/MovieCard'
 import MovieModal from './components/MovieModal'
 import SearchBar from './components/SearchBar'
+import Sidebar from './components/Sidebar'
 
 const TMDB_NOW_PLAYING_URL = 'https://api.themoviedb.org/3/movie/now_playing'
 const TMDB_SEARCH_URL = 'https://api.themoviedb.org/3/search/movie'
@@ -34,8 +35,9 @@ const App = () => {
   const [aiRecommendation, setAiRecommendation] = useState(null)
   const [isLoadingAi, setIsLoadingAi] = useState(false)
   const [aiRecommendationCache, setAiRecommendationCache] = useState({})
-  const [favoriteMovieIds, setFavoriteMovieIds] = useState({})
-  const [watchedMovieIds, setWatchedMovieIds] = useState({})
+  const [favoriteMoviesById, setFavoriteMoviesById] = useState({})
+  const [watchedMoviesById, setWatchedMoviesById] = useState({})
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false)
 
   const apiKey = import.meta.env.VITE_API_KEY
   const openRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY
@@ -123,20 +125,34 @@ const App = () => {
     setSelectedMovieId(movieId)
   }
 
-  const handleFavoriteToggle = (movieId) => {
-    const movieKey = String(movieId)
-    setFavoriteMovieIds((previousFavorites) => ({
-      ...previousFavorites,
-      [movieKey]: !previousFavorites[movieKey],
-    }))
+  const handleFavoriteToggle = (movie) => {
+    const movieKey = String(movie.id)
+    setFavoriteMoviesById((previousFavorites) => {
+      if (previousFavorites[movieKey]) {
+        const { [movieKey]: _removedMovie, ...remainingFavorites } = previousFavorites
+        return remainingFavorites
+      }
+
+      return {
+        ...previousFavorites,
+        [movieKey]: movie,
+      }
+    })
   }
 
-  const handleWatchedToggle = (movieId) => {
-    const movieKey = String(movieId)
-    setWatchedMovieIds((previousWatched) => ({
-      ...previousWatched,
-      [movieKey]: !previousWatched[movieKey],
-    }))
+  const handleWatchedToggle = (movie) => {
+    const movieKey = String(movie.id)
+    setWatchedMoviesById((previousWatched) => {
+      if (previousWatched[movieKey]) {
+        const { [movieKey]: _removedMovie, ...remainingWatched } = previousWatched
+        return remainingWatched
+      }
+
+      return {
+        ...previousWatched,
+        [movieKey]: movie,
+      }
+    })
   }
 
   const handleCloseModal = () => {
@@ -316,60 +332,97 @@ Focus on who this movie is for and what kind of evening watch experience it offe
     return moviesCopy.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
   }, [movies, sortOption])
 
+  const favoritedMovies = useMemo(
+    () =>
+      Object.values(favoriteMoviesById).sort((a, b) =>
+        (a.title || '').localeCompare(b.title || ''),
+      ),
+    [favoriteMoviesById],
+  )
+
+  const watchedMovies = useMemo(
+    () =>
+      Object.values(watchedMoviesById).sort((a, b) =>
+        (a.title || '').localeCompare(b.title || ''),
+      ),
+    [watchedMoviesById],
+  )
+
   return (
     <div className="App">
       <Header />
       <main className="app-main">
-        <SearchBar
-          query={searchQuery}
-          onQueryChange={setSearchQuery}
-          onSubmit={handleSearchSubmit}
-          onClear={handleShowNowPlaying}
-          isLoading={isLoadingList}
-        />
-        <p className="mode-label">
-          Showing: {activeMode === 'search' ? `Search results for "${searchQuery}"` : 'Now Playing'}
-        </p>
-        <div className="sort-row">
-          <label htmlFor="sort-select">Sort by:</label>
-          <select
-            id="sort-select"
-            className="sort-select"
-            value={sortOption}
-            onChange={(event) => setSortOption(event.target.value)}
-          >
-            <option value="title_asc">Title (A-Z)</option>
-            <option value="release_desc">Release Date (Newest)</option>
-            <option value="vote_desc">Vote Average (Highest)</option>
-          </select>
-        </div>
-        {isLoadingList && <p>Loading movies from TMDb...</p>}
-        {listError && <p className="error-message">{listError}</p>}
-        <div className="movie-grid">
-          {sortedMovies.map((movie) => (
-            <MovieCard
-              key={movie.id}
-              movie={movie}
-              onClick={handleMovieClick}
-              onFavoriteToggle={handleFavoriteToggle}
-              isFavorite={Boolean(favoriteMovieIds[String(movie.id)])}
-              onWatchedToggle={handleWatchedToggle}
-              isWatched={Boolean(watchedMovieIds[String(movie.id)])}
+        <div className={`app-layout ${isSidebarVisible ? '' : 'app-layout--full'}`.trim()}>
+          <section className="app-content">
+            <SearchBar
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              onSubmit={handleSearchSubmit}
+              onClear={handleShowNowPlaying}
+              isLoading={isLoadingList}
             />
-          ))}
-        </div>
-        {movies.length === 0 && !isLoadingList && !listError && (
-          <p className="empty-state">No movies found.</p>
-        )}
-        <div className="load-more-row">
-          <button
-            type="button"
-            className="load-more-button"
-            onClick={handleLoadMore}
-            disabled={isLoadingList || !canLoadMore}
-          >
-            {canLoadMore ? 'Load More' : 'No More Movies'}
-          </button>
+            <p className="mode-label">
+              Showing: {activeMode === 'search' ? `Search results for "${searchQuery}"` : 'Now Playing'}
+            </p>
+            <div className="controls-row">
+              <div className="sort-row">
+                <label htmlFor="sort-select">Sort by:</label>
+                <select
+                  id="sort-select"
+                  className="sort-select"
+                  value={sortOption}
+                  onChange={(event) => setSortOption(event.target.value)}
+                >
+                  <option value="title_asc">Title (A-Z)</option>
+                  <option value="release_desc">Release Date (Newest)</option>
+                  <option value="vote_desc">Vote Average (Highest)</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                className="sidebar-toggle-button"
+                onClick={() => setIsSidebarVisible((previous) => !previous)}
+              >
+                {isSidebarVisible ? 'Hide Lists' : 'Show Lists'}
+              </button>
+            </div>
+            {isLoadingList && <p>Loading movies from TMDb...</p>}
+            {listError && <p className="error-message">{listError}</p>}
+            <div className={`movie-grid ${isSidebarVisible ? 'movie-grid--with-sidebar' : ''}`.trim()}>
+              {sortedMovies.map((movie) => (
+                <MovieCard
+                  key={movie.id}
+                  movie={movie}
+                  onClick={handleMovieClick}
+                  onFavoriteToggle={handleFavoriteToggle}
+                  isFavorite={Boolean(favoriteMoviesById[String(movie.id)])}
+                  onWatchedToggle={handleWatchedToggle}
+                  isWatched={Boolean(watchedMoviesById[String(movie.id)])}
+                />
+              ))}
+            </div>
+            {movies.length === 0 && !isLoadingList && !listError && (
+              <p className="empty-state">No movies found.</p>
+            )}
+            <div className="load-more-row">
+              <button
+                type="button"
+                className="load-more-button"
+                onClick={handleLoadMore}
+                disabled={isLoadingList || !canLoadMore}
+              >
+                {canLoadMore ? 'Load More' : 'No More Movies'}
+              </button>
+            </div>
+          </section>
+          {isSidebarVisible && (
+            <div className="app-sidebar">
+              <Sidebar
+                favoritedMovies={favoritedMovies}
+                watchedMovies={watchedMovies}
+              />
+            </div>
+          )}
         </div>
       </main>
       <Footer />
