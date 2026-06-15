@@ -34,6 +34,7 @@ const App = () => {
   const [aiRecommendation, setAiRecommendation] = useState(null)
   const [isLoadingAi, setIsLoadingAi] = useState(false)
   const [aiRecommendationCache, setAiRecommendationCache] = useState({})
+  const [favoriteMovieIds, setFavoriteMovieIds] = useState({})
 
   const apiKey = import.meta.env.VITE_API_KEY
   const openRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY
@@ -119,6 +120,14 @@ const App = () => {
 
   const handleMovieClick = (movieId) => {
     setSelectedMovieId(movieId)
+  }
+
+  const handleFavoriteToggle = (movieId) => {
+    const movieKey = String(movieId)
+    setFavoriteMovieIds((previousFavorites) => ({
+      ...previousFavorites,
+      [movieKey]: !previousFavorites[movieKey],
+    }))
   }
 
   const handleCloseModal = () => {
@@ -329,7 +338,13 @@ Focus on who this movie is for and what kind of evening watch experience it offe
         {listError && <p className="error-message">{listError}</p>}
         <div className="movie-grid">
           {sortedMovies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} onClick={handleMovieClick} />
+            <MovieCard
+              key={movie.id}
+              movie={movie}
+              onClick={handleMovieClick}
+              onFavoriteToggle={handleFavoriteToggle}
+              isFavorite={Boolean(favoriteMovieIds[String(movie.id)])}
+            />
           ))}
         </div>
         {movies.length === 0 && !isLoadingList && !listError && (
