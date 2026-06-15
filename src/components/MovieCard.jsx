@@ -21,7 +21,14 @@ const formatReleaseDate = (releaseDate) => {
   return releaseDate
 }
 
-const MovieCard = ({ movie, onClick, onFavoriteToggle, isFavorite }) => {
+const MovieCard = ({
+  movie,
+  onClick,
+  onFavoriteToggle,
+  isFavorite,
+  onWatchedToggle,
+  isWatched,
+}) => {
   const { id, title, poster_path: posterPath, vote_average: voteAverage, release_date: releaseDate } = movie
 
   const posterUrl = posterPath
@@ -44,15 +51,41 @@ const MovieCard = ({ movie, onClick, onFavoriteToggle, isFavorite }) => {
     onFavoriteToggle(id)
   }
 
+  const handleWatchedClick = (event) => {
+    event.stopPropagation()
+    onWatchedToggle(id)
+  }
+
   return (
     <article
-      className={`movie-card ${isFavorite ? 'movie-card--favorite' : ''}`}
+      className={`movie-card ${isFavorite ? 'movie-card--favorite' : ''} ${isWatched ? 'movie-card--watched' : ''}`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       role="button"
       tabIndex={0}
       aria-label={`View details for ${title}`}
     >
+      <button
+        type="button"
+        className={`movie-card__watched-button ${isWatched ? 'is-active' : ''}`}
+        onClick={handleWatchedClick}
+        aria-label={`${isWatched ? 'Mark' : 'Mark'} ${title} as ${isWatched ? 'unwatched' : 'watched'}`}
+      >
+        <svg
+          className="movie-card__watched-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M9.2 16.2 5.5 12.5l1.4-1.4 2.3 2.3 7-7 1.4 1.4z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
       <button
         type="button"
         className={`movie-card__favorite-button ${isFavorite ? 'is-active' : ''}`}
@@ -95,6 +128,8 @@ MovieCard.propTypes = {
   onClick: PropTypes.func.isRequired,
   onFavoriteToggle: PropTypes.func.isRequired,
   isFavorite: PropTypes.bool.isRequired,
+  onWatchedToggle: PropTypes.func.isRequired,
+  isWatched: PropTypes.bool.isRequired,
 }
 
 export default MovieCard

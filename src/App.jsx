@@ -35,6 +35,7 @@ const App = () => {
   const [isLoadingAi, setIsLoadingAi] = useState(false)
   const [aiRecommendationCache, setAiRecommendationCache] = useState({})
   const [favoriteMovieIds, setFavoriteMovieIds] = useState({})
+  const [watchedMovieIds, setWatchedMovieIds] = useState({})
 
   const apiKey = import.meta.env.VITE_API_KEY
   const openRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY
@@ -127,6 +128,14 @@ const App = () => {
     setFavoriteMovieIds((previousFavorites) => ({
       ...previousFavorites,
       [movieKey]: !previousFavorites[movieKey],
+    }))
+  }
+
+  const handleWatchedToggle = (movieId) => {
+    const movieKey = String(movieId)
+    setWatchedMovieIds((previousWatched) => ({
+      ...previousWatched,
+      [movieKey]: !previousWatched[movieKey],
     }))
   }
 
@@ -344,6 +353,8 @@ Focus on who this movie is for and what kind of evening watch experience it offe
               onClick={handleMovieClick}
               onFavoriteToggle={handleFavoriteToggle}
               isFavorite={Boolean(favoriteMovieIds[String(movie.id)])}
+              onWatchedToggle={handleWatchedToggle}
+              isWatched={Boolean(watchedMovieIds[String(movie.id)])}
             />
           ))}
         </div>
