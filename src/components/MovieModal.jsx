@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import PropTypes from 'prop-types'
 import './MovieModal.css'
 
 const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w780'
@@ -76,10 +77,20 @@ const MovieModal = ({ movieId, movieDetails, isOpen, isLoading, error, onClose }
               alt={`${movieDetails.title} backdrop`}
               className="movie-modal__backdrop"
             />
-            <h2 id="movie-modal-title">{movieDetails.title}</h2>
-            <p><strong>Runtime:</strong> {formatRuntime(movieDetails.runtime)}</p>
-            <p><strong>Release Date:</strong> {formatReleaseDate(movieDetails.release_date)}</p>
-            <p><strong>Genres:</strong> {formatGenres(movieDetails.genres)}</p>
+            <h2 id="movie-modal-title" className="movie-modal__title">
+              {movieDetails.title}
+            </h2>
+            <div className="movie-modal__metadata">
+              <p>
+                <strong>Runtime:</strong> {formatRuntime(movieDetails.runtime)}
+              </p>
+              <p>
+                <strong>Release Date:</strong> {formatReleaseDate(movieDetails.release_date)}
+              </p>
+              <p>
+                <strong>Genres:</strong> {formatGenres(movieDetails.genres)}
+              </p>
+            </div>
             <p className="movie-modal__overview">{movieDetails.overview || 'Overview unavailable.'}</p>
           </div>
         )}
@@ -89,6 +100,33 @@ const MovieModal = ({ movieId, movieDetails, isOpen, isLoading, error, onClose }
       </section>
     </div>
   )
+}
+
+MovieModal.propTypes = {
+  movieId: PropTypes.number,
+  movieDetails: PropTypes.shape({
+    title: PropTypes.string,
+    backdrop_path: PropTypes.string,
+    runtime: PropTypes.number,
+    release_date: PropTypes.string,
+    genres: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.number,
+        name: PropTypes.string,
+      }),
+    ),
+    overview: PropTypes.string,
+  }),
+  isOpen: PropTypes.bool.isRequired,
+  isLoading: PropTypes.bool.isRequired,
+  error: PropTypes.string,
+  onClose: PropTypes.func.isRequired,
+}
+
+MovieModal.defaultProps = {
+  movieId: null,
+  movieDetails: null,
+  error: null,
 }
 
 export default MovieModal

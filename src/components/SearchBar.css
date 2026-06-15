@@ -1,5 +1,5 @@
 .search-bar {
-  margin-bottom: 1rem;
+  margin-bottom: 1.1rem;
 }
 
 .search-bar__form {
@@ -8,30 +8,56 @@
 }
 
 .search-bar__input {
-  background: #1a1a1a;
-  border: 1px solid #383838;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   box-sizing: border-box;
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--color-text);
   flex: 1;
   font-size: 1rem;
+  font-family: inherit;
   padding: 0.65rem 0.75rem;
 }
 
+.search-bar__input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.search-bar__input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .search-bar__button {
-  background: #4a7dff;
-  border: none;
+  background: var(--color-accent);
+  border: 1px solid transparent;
   box-sizing: border-box;
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--color-text);
   cursor: pointer;
   font-size: 0.95rem;
+  font-family: inherit;
   font-weight: 600;
   padding: 0.65rem 0.95rem;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.search-bar__button:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.search-bar__button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .search-bar__button--secondary {
-  background: #3a3a3a;
+  background: #334155;
+}
+
+.search-bar__button--secondary:hover:not(:disabled) {
+  background: #475569;
 }
 
 .search-bar__button:disabled {

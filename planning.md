@@ -250,3 +250,11 @@ Simple flow diagram:
 - **Failure behavior:** If AI call fails or times out, modal shows a graceful fallback message such as "Recommendation unavailable right now. Please try again."
 - **Trigger:** AI request starts after movie details are successfully loaded and modal is open.
 
+## 6) Milestone 7 Visual Intent
+
+- **App shell intent:** Use a cinema-inspired dark theme with strong contrast, centered content, and clear vertical rhythm so browsing feels focused and calm.
+- **Typography intent:** Use one display font for headings and one readable sans-serif for body copy, with consistent type scale between title, section labels, and metadata.
+- **Movie card intent:** Cards should feel tactile with subtle elevation, clean spacing, and a gentle lift on hover/focus to signal interactivity without distraction.
+- **Modal intent:** The overlay should create depth with a dark translucent backdrop, while the modal content uses clear hierarchy for title, metadata, and overview.
+- **Control intent:** Search, sort, and action buttons should share a consistent visual language with obvious focus states for keyboard users.
+

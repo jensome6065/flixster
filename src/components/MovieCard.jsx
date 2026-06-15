@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import './MovieCard.css'
 
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w342'
@@ -32,17 +33,10 @@ const MovieCard = ({ movie, onClick }) => {
   }
 
   return (
-    <article
+    <button
+      type="button"
       className="movie-card"
       onClick={handleCardClick}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          handleCardClick()
-        }
-      }}
-      role="button"
-      tabIndex={0}
       aria-label={`View details for ${title}`}
     >
       <img className="movie-card__poster" src={posterUrl} alt={`${title} poster`} />
@@ -51,8 +45,19 @@ const MovieCard = ({ movie, onClick }) => {
         <p className="movie-card__vote">Vote Average: {formatVoteAverage(voteAverage)}</p>
         <p className="movie-card__release">{formatReleaseDate(releaseDate)}</p>
       </div>
-    </article>
+    </button>
   )
+}
+
+MovieCard.propTypes = {
+  movie: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    title: PropTypes.string.isRequired,
+    poster_path: PropTypes.string,
+    vote_average: PropTypes.number,
+    release_date: PropTypes.string,
+  }).isRequired,
+  onClick: PropTypes.func.isRequired,
 }
 
 export default MovieCard

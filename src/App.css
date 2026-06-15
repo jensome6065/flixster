@@ -2,9 +2,9 @@
   display: flex;
   flex-direction: column;
   margin: 0 auto;
-  max-width: 1100px;
+  max-width: 1120px;
   min-height: 100vh;
-  padding: 2rem 1rem;
+  padding: 2rem 1rem 2.5rem;
 }
 
 .app-main {
@@ -12,8 +12,8 @@
 }
 
 .mode-label {
-  color: #5f5f5f;
-  margin: 0 0 1rem;
+  color: var(--color-text-muted);
+  margin: 0 0 1.15rem;
   text-align: center;
 }
 
@@ -22,25 +22,30 @@
   display: flex;
   gap: 0.5rem;
   justify-content: center;
-  margin: 0 0 1rem;
+  margin: 0 0 1.2rem;
 }
 
 .sort-row label {
-  color: #3e3e3e;
+  color: var(--color-text);
   font-weight: 600;
 }
 
 .sort-select {
-  background: #ffffff;
-  border: 1px solid #b9b9b9;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: #1f1f1f;
+  color: var(--color-text);
   font-size: 0.95rem;
   padding: 0.4rem 0.55rem;
 }
 
+.sort-select:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .error-message {
-  color: #ff7b7b;
+  color: var(--color-danger);
   margin: 0 0 1rem;
   text-align: center;
 }
@@ -58,7 +63,7 @@ Responsive targets:
 */
 
 .empty-state {
-  color: #cfcfcf;
+  color: var(--color-text-muted);
   margin: 1rem 0;
   text-align: center;
 }
@@ -70,14 +75,25 @@ Responsive targets:
 }
 
 .load-more-button {
-  background: #4a7dff;
-  border: none;
+  background: var(--color-accent);
+  border: 1px solid transparent;
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--color-text);
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 600;
   padding: 0.7rem 1rem;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.load-more-button:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.load-more-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .load-more-button:disabled {

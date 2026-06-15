@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import './SearchBar.css'
 
 const SearchBar = ({ query, onQueryChange, onSubmit, onClear, isLoading = false }) => {
@@ -31,6 +32,14 @@ const SearchBar = ({ query, onQueryChange, onSubmit, onClear, isLoading = false 
       </form>
     </section>
   )
+}
+
+SearchBar.propTypes = {
+  query: PropTypes.string.isRequired,
+  onQueryChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  onClear: PropTypes.func.isRequired,
+  isLoading: PropTypes.bool,
 }
 
 export default SearchBar
