@@ -6,6 +6,7 @@ import MovieCard from './components/MovieCard'
 import MovieModal from './components/MovieModal'
 import SearchBar from './components/SearchBar'
 import Sidebar from './components/Sidebar'
+import SkeletonCard from './components/SkeletonCard'
 
 const TMDB_NOW_PLAYING_URL = 'https://api.themoviedb.org/3/movie/now_playing'
 const TMDB_SEARCH_URL = 'https://api.themoviedb.org/3/search/movie'
@@ -47,6 +48,7 @@ const App = () => {
   const [hoverPreview, setHoverPreview] = useState(null)
   const [featuredMovieIndex, setFeaturedMovieIndex] = useState(0)
   const [featuredTransitionFromIndex, setFeaturedTransitionFromIndex] = useState(null)
+  const [parallaxOffset, setParallaxOffset] = useState(0)
   const hoverPreviewTimeoutRef = useRef(null)
   const featuredTransitionTimeoutRef = useRef(null)
 
@@ -126,6 +128,16 @@ const App = () => {
         window.clearTimeout(featuredTransitionTimeoutRef.current)
       }
     }
+  }, [])
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrolled = window.scrollY
+      setParallaxOffset(scrolled * 0.5)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const handleSearchSubmit = () => {
@@ -221,16 +233,15 @@ const App = () => {
       return
     }
 
+    if (!isDesktopHoverPreviewEnabled) {
+      return
+    }
+
     setHoveredMovieId(movie.id)
     setHoverPreview(null)
 
     if (hoverPreviewTimeoutRef.current) {
       window.clearTimeout(hoverPreviewTimeoutRef.current)
-    }
-
-    if (!isDesktopHoverPreviewEnabled) {
-      fetchMovieTrailerKey(movie.id)
-      return
     }
 
     hoverPreviewTimeoutRef.current = window.setTimeout(async () => {
@@ -607,6 +618,7 @@ Focus on who this movie is for and what kind of evening watch experience it offe
           }
           alt=""
           aria-hidden="true"
+          style={{ transform: `translateY(${parallaxOffset}px)` }}
         />
         <div className="featured-banner__overlay" aria-hidden="true" />
       </div>
@@ -753,25 +765,26 @@ Focus on who this movie is for and what kind of evening watch experience it offe
                 {isSidebarVisible ? 'Hide Lists' : 'Show Lists'}
               </button>
             </div>
-            {isLoadingList && <p>Loading movies from TMDb...</p>}
             {listError && <p className="error-message">{listError}</p>}
             <div className={`movie-grid ${isSidebarVisible ? 'movie-grid--with-sidebar' : ''}`.trim()}>
-              {sortedMovies.map((movie) => (
-                <MovieCard
-                  key={movie.id}
-                  movie={movie}
-                  onClick={handleMovieClick}
-                  onHoverStart={handleMovieHoverStart}
-                  onHoverEnd={handleMovieHoverEnd}
-                  onFavoriteToggle={handleFavoriteToggle}
-                  isFavorite={Boolean(favoriteMoviesById[String(movie.id)])}
-                  onWatchedToggle={handleWatchedToggle}
-                  isWatched={Boolean(watchedMoviesById[String(movie.id)])}
-                  trailerKey={trailerKeysByMovieId[String(movie.id)] ?? null}
-                  isPreviewPlaying={!isDesktopHoverPreviewEnabled && hoveredMovieId === movie.id}
-                  isDimmed={hoveredMovieId !== null && hoveredMovieId !== movie.id}
-                />
-              ))}
+              {isLoadingList
+                ? Array.from({ length: 8 }).map((_, index) => <SkeletonCard key={`skeleton-${index}`} />)
+                : sortedMovies.map((movie) => (
+                    <MovieCard
+                      key={movie.id}
+                      movie={movie}
+                      onClick={handleMovieClick}
+                      onHoverStart={handleMovieHoverStart}
+                      onHoverEnd={handleMovieHoverEnd}
+                      onFavoriteToggle={handleFavoriteToggle}
+                      isFavorite={Boolean(favoriteMoviesById[String(movie.id)])}
+                      onWatchedToggle={handleWatchedToggle}
+                      isWatched={Boolean(watchedMoviesById[String(movie.id)])}
+                      trailerKey={trailerKeysByMovieId[String(movie.id)] ?? null}
+                      isPreviewPlaying={false}
+                      isDimmed={hoveredMovieId !== null && hoveredMovieId !== movie.id}
+                    />
+                  ))}
             </div>
             {movies.length === 0 && !isLoadingList && !listError && (
               <p className="empty-state">No movies found.</p>

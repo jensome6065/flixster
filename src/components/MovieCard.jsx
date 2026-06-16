@@ -61,6 +61,15 @@ const MovieCard = ({
     onWatchedToggle(movie)
   }
 
+  const handleButtonMouseEnter = (event) => {
+    event.stopPropagation()
+    onHoverEnd(id)
+  }
+
+  const handleButtonMouseLeave = (event) => {
+    event.stopPropagation()
+  }
+
   const trailerPreviewUrl = trailerKey
     ? `https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${trailerKey}`
     : null
@@ -82,6 +91,8 @@ const MovieCard = ({
         type="button"
         className={`movie-card__watched-button ${isWatched ? 'is-active' : ''}`}
         onClick={handleWatchedClick}
+        onMouseEnter={handleButtonMouseEnter}
+        onMouseLeave={handleButtonMouseLeave}
         aria-label={`${isWatched ? 'Mark' : 'Mark'} ${title} as ${isWatched ? 'unwatched' : 'watched'}`}
       >
         <svg
@@ -103,6 +114,8 @@ const MovieCard = ({
         type="button"
         className={`movie-card__favorite-button ${isFavorite ? 'is-active' : ''}`}
         onClick={handleFavoriteClick}
+        onMouseEnter={handleButtonMouseEnter}
+        onMouseLeave={handleButtonMouseLeave}
         aria-label={`${isFavorite ? 'Remove' : 'Add'} ${title} ${isFavorite ? 'from' : 'to'} favorites`}
       >
         <svg

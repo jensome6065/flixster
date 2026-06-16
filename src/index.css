@@ -25,4 +25,9 @@ body {
   color: var(--color-text);
   font-family: 'Manrope', Arial, sans-serif;
   line-height: 1.5;
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(248, 250, 252)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>') 12 12, auto;
+}
+
+a, button, [role="button"], .movie-card {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="rgb(124, 58, 237)" stroke="rgb(248, 250, 252)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="white"/></svg>') 12 12, pointer !important;
 }
