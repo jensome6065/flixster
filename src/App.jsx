@@ -396,6 +396,7 @@ const App = () => {
         const params = new URLSearchParams({
           api_key: apiKey,
           language: 'en-US',
+          append_to_response: 'release_dates',
         })
 
         const response = await fetch(

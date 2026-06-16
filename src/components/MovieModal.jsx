@@ -28,6 +28,20 @@ const formatReleaseDate = (releaseDate) => {
   return releaseDate
 }
 
+const getCertification = (releaseDates) => {
+  if (!releaseDates || !releaseDates.results) {
+    return 'Not Rated'
+  }
+
+  const usRelease = releaseDates.results.find((r) => r.iso_3166_1 === 'US')
+  if (!usRelease || !usRelease.release_dates || usRelease.release_dates.length === 0) {
+    return 'Not Rated'
+  }
+
+  const certification = usRelease.release_dates.find((rd) => rd.certification)
+  return certification?.certification || 'Not Rated'
+}
+
 const getUserLocation = () => {
   const stored = localStorage.getItem(LOCATION_STORAGE_KEY)
   if (stored) {
@@ -243,6 +257,9 @@ const MovieModal = ({
                 <strong>Release Date:</strong> {formatReleaseDate(movieDetails.release_date)}
               </p>
               <p>
+                <strong>Certification:</strong> {getCertification(movieDetails.release_dates)}
+              </p>
+              <p>
                 <strong>Genres:</strong> {formatGenres(movieDetails.genres)}
               </p>
             </div>
@@ -366,6 +383,18 @@ MovieModal.propTypes = {
       }),
     ),
     overview: PropTypes.string,
+    release_dates: PropTypes.shape({
+      results: PropTypes.arrayOf(
+        PropTypes.shape({
+          iso_3166_1: PropTypes.string,
+          release_dates: PropTypes.arrayOf(
+            PropTypes.shape({
+              certification: PropTypes.string,
+            }),
+          ),
+        }),
+      ),
+    }),
   }),
   isOpen: PropTypes.bool.isRequired,
   isLoading: PropTypes.bool.isRequired,
