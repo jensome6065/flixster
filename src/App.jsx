@@ -28,7 +28,7 @@ const App = () => {
   const [activeMode, setActiveMode] = useState('now_playing')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [sortOption, setSortOption] = useState('title_asc')
+  const [sortOption, setSortOption] = useState('default')
   const [isLoadingList, setIsLoadingList] = useState(false)
   const [listError, setListError] = useState(null)
   const [selectedMovieId, setSelectedMovieId] = useState(null)
@@ -474,6 +474,10 @@ Focus on who this movie is for and what kind of evening watch experience it offe
   const sortedMovies = useMemo(() => {
     const moviesCopy = [...movies]
 
+    if (sortOption === 'default') {
+      return moviesCopy
+    }
+
     if (sortOption === 'vote_desc') {
       return moviesCopy.sort(
         (a, b) => (b.vote_average || 0) - (a.vote_average || 0),
@@ -735,6 +739,7 @@ Focus on who this movie is for and what kind of evening watch experience it offe
                   value={sortOption}
                   onChange={(event) => setSortOption(event.target.value)}
                 >
+                  <option value="default">Default (TMDb Order)</option>
                   <option value="title_asc">Title (A-Z)</option>
                   <option value="release_desc">Release Date (Newest)</option>
                   <option value="vote_desc">Vote Average (Highest)</option>

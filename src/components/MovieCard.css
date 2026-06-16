@@ -197,7 +197,6 @@
 @media (max-width: 600px) {
   .movie-card {
     border-radius: 10px;
-    max-width: 320px;
   }
 
   .movie-card__content {
