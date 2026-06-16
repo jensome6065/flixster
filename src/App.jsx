@@ -24,6 +24,13 @@ const AI_FALLBACK_MESSAGE =
 const DESKTOP_HOVER_QUERY = '(hover: hover) and (pointer: fine) and (min-width: 1024px)'
 const FEATURED_ROTATION_INTERVAL_MS = 9000
 const FEATURED_CROSSFADE_DURATION_MS = 560
+const OFFICIAL_TRAILER_OVERRIDES = [
+  {
+    title: 'Michael',
+    releaseYear: 2026,
+    youtubeKey: '3zOLzsbOleM',
+  },
+]
 
 const App = () => {
   const [movies, setMovies] = useState([])
@@ -281,16 +288,28 @@ const App = () => {
     const youtubeVideos = videos.filter((video) => video.site === 'YouTube' && video.key)
     const trailerCandidates = youtubeVideos.filter((video) => video.type === 'Trailer')
     const teaserCandidates = youtubeVideos.filter((video) => video.type === 'Teaser')
+    const isOfficialVideo = (video) => {
+      const normalizedName = (video?.name || '').toLowerCase()
+      return Boolean(video?.official) || normalizedName.includes('official')
+    }
+    const sortByNewest = (a, b) => new Date(b.published_at || 0) - new Date(a.published_at || 0)
 
-    const sortedCandidates = [...trailerCandidates, ...teaserCandidates].sort((a, b) => {
-      const officialScore = Number(Boolean(b.official)) - Number(Boolean(a.official))
-      if (officialScore !== 0) {
-        return officialScore
-      }
-      return new Date(b.published_at || 0) - new Date(a.published_at || 0)
-    })
+    const officialTrailerCandidates = trailerCandidates
+      .filter(isOfficialVideo)
+      .sort(sortByNewest)
+    if (officialTrailerCandidates.length > 0) {
+      return officialTrailerCandidates[0].key
+    }
 
-    return sortedCandidates[0]?.key || null
+    const officialTeaserCandidates = teaserCandidates
+      .filter(isOfficialVideo)
+      .sort(sortByNewest)
+    if (officialTeaserCandidates.length > 0) {
+      return officialTeaserCandidates[0].key
+    }
+
+    const fallbackCandidates = [...trailerCandidates, ...teaserCandidates].sort(sortByNewest)
+    return fallbackCandidates[0]?.key || null
   }, [])
 
   const fetchMovieTrailerKey = useCallback(async (movieId) => {
@@ -711,15 +730,33 @@ Focus on who this movie is for and what kind of evening watch experience it offe
   const selectedMovieTrailerKey = selectedMovieId
     ? trailerKeysByMovieId[String(selectedMovieId)] ?? null
     : null
-  const featuredTrailerKey = featuredMovie?.id
-    ? trailerKeysByMovieId[String(featuredMovie.id)] ?? null
-    : null
+  const getOfficialTrailerOverrideKey = (movie) => {
+    if (!movie?.title) {
+      return null
+    }
+
+    const releaseYear = Number((movie.release_date || '').slice(0, 4))
+    const match = OFFICIAL_TRAILER_OVERRIDES.find(
+      (override) =>
+        override.title.toLowerCase() === movie.title.toLowerCase()
+        && (!override.releaseYear || override.releaseYear === releaseYear),
+    )
+    return match?.youtubeKey || null
+  }
+
+  const featuredTrailerKey =
+    getOfficialTrailerOverrideKey(featuredMovie)
+    || (featuredMovie?.id ? trailerKeysByMovieId[String(featuredMovie.id)] ?? null : null)
   const featuredTrailerUrl = featuredTrailerKey
     ? `https://www.youtube.com/embed/${featuredTrailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${featuredTrailerKey}`
     : null
-  const featuredTransitionFromTrailerKey = featuredTransitionFromMovie?.id
-    ? trailerKeysByMovieId[String(featuredTransitionFromMovie.id)] ?? null
-    : null
+  const featuredTransitionFromTrailerKey =
+    getOfficialTrailerOverrideKey(featuredTransitionFromMovie)
+    || (
+      featuredTransitionFromMovie?.id
+        ? trailerKeysByMovieId[String(featuredTransitionFromMovie.id)] ?? null
+        : null
+    )
   const featuredTransitionFromTrailerUrl = featuredTransitionFromTrailerKey
     ? `https://www.youtube.com/embed/${featuredTransitionFromTrailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${featuredTransitionFromTrailerKey}`
     : null
