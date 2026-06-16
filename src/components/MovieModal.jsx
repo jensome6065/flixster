@@ -95,7 +95,10 @@ const MovieModal = ({
   aiRecommendation,
   aiLoading,
   trailerKey,
+  similarMovies,
+  isLoadingSimilar,
   onClose,
+  onMovieClick,
 }) => {
   const [activeTab, setActiveTab] = useState('info')
   const [userLocation, setUserLocation] = useState(null)
@@ -300,6 +303,43 @@ const MovieModal = ({
                 <p className="movie-modal__insight-text">{aiRecommendation}</p>
               )}
             </section>
+            {similarMovies && similarMovies.length > 0 && (
+              <section className="movie-modal__similar">
+                <h3 className="movie-modal__similar-title">More Like This</h3>
+                <div className="movie-modal__similar-grid">
+                  {similarMovies.map((movie) => (
+                    <button
+                      key={movie.id}
+                      type="button"
+                      className="movie-modal__similar-card"
+                      onClick={() => onMovieClick(movie.id)}
+                    >
+                      <img
+                        src={
+                          movie.poster_path
+                            ? `https://image.tmdb.org/t/p/w154${movie.poster_path}`
+                            : 'https://via.placeholder.com/154x231?text=No+Poster'
+                        }
+                        alt={movie.title}
+                        className="movie-modal__similar-poster"
+                      />
+                      <div className="movie-modal__similar-info">
+                        <p className="movie-modal__similar-name">{movie.title}</p>
+                        <p className="movie-modal__similar-rating">
+                          Rating: {movie.vote_average?.toFixed(1) || 'N/A'}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+            {isLoadingSimilar && (
+              <section className="movie-modal__similar">
+                <h3 className="movie-modal__similar-title">More Like This</h3>
+                <p className="movie-modal__status">Loading similar movies...</p>
+              </section>
+            )}
               </>
             ) : null}
           </div>
@@ -333,7 +373,17 @@ MovieModal.propTypes = {
   aiRecommendation: PropTypes.string,
   aiLoading: PropTypes.bool,
   trailerKey: PropTypes.string,
+  similarMovies: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number,
+      title: PropTypes.string,
+      poster_path: PropTypes.string,
+      vote_average: PropTypes.number,
+    }),
+  ),
+  isLoadingSimilar: PropTypes.bool,
   onClose: PropTypes.func.isRequired,
+  onMovieClick: PropTypes.func,
 }
 
 MovieModal.defaultProps = {
@@ -343,6 +393,9 @@ MovieModal.defaultProps = {
   aiRecommendation: null,
   aiLoading: false,
   trailerKey: null,
+  similarMovies: [],
+  isLoadingSimilar: false,
+  onMovieClick: null,
 }
 
 export default MovieModal

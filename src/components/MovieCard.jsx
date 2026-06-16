@@ -33,6 +33,9 @@ const MovieCard = ({
   trailerKey,
   isPreviewPlaying,
   isDimmed,
+  onComparisonToggle,
+  isInComparison,
+  isComparisonFull,
 }) => {
   const { id, title, poster_path: posterPath, vote_average: voteAverage, release_date: releaseDate } = movie
 
@@ -70,19 +73,30 @@ const MovieCard = ({
     event.stopPropagation()
   }
 
+  const handleComparisonToggle = (event) => {
+    event.stopPropagation()
+    if (onComparisonToggle) {
+      onComparisonToggle(movie)
+    }
+  }
+
   const trailerPreviewUrl = trailerKey
     ? `https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${trailerKey}`
     : null
+
+  const handlePosterHoverStart = (event) => {
+    onHoverStart(movie, event.currentTarget.closest('.movie-card'))
+  }
+
+  const handlePosterHoverEnd = () => {
+    onHoverEnd(id)
+  }
 
   return (
     <article
       className={`movie-card ${isFavorite ? 'movie-card--favorite' : ''} ${isWatched ? 'movie-card--watched' : ''} ${isPreviewPlaying ? 'movie-card--previewing' : ''} ${isDimmed ? 'movie-card--dimmed' : ''}`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
-      onMouseEnter={(event) => onHoverStart(movie, event.currentTarget)}
-      onMouseLeave={() => onHoverEnd(id)}
-      onFocus={(event) => onHoverStart(movie, event.currentTarget)}
-      onBlur={() => onHoverEnd(id)}
       role="button"
       tabIndex={0}
       aria-label={`View details for ${title}`}
@@ -133,7 +147,11 @@ const MovieCard = ({
           />
         </svg>
       </button>
-      <div className="movie-card__media">
+      <div
+        className="movie-card__media"
+        onMouseEnter={handlePosterHoverStart}
+        onMouseLeave={handlePosterHoverEnd}
+      >
         <img className="movie-card__poster" src={posterUrl} alt={`${title} poster`} />
         {isPreviewPlaying && trailerPreviewUrl && (
           <>
@@ -157,6 +175,24 @@ const MovieCard = ({
         <h3 className="movie-card__title">{title}</h3>
         <p className="movie-card__vote">Vote Average: {formatVoteAverage(voteAverage)}</p>
         <p className="movie-card__release">{formatReleaseDate(releaseDate)}</p>
+        {onComparisonToggle && (
+          <label
+            className="movie-card__compare-label"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              type="checkbox"
+              className="movie-card__compare-checkbox"
+              checked={isInComparison}
+              onChange={handleComparisonToggle}
+              disabled={!isInComparison && isComparisonFull}
+              aria-label={`${isInComparison ? 'Remove from' : 'Add to'} comparison`}
+            />
+            <span className="movie-card__compare-text">
+              {isInComparison ? 'In Comparison' : 'Compare'}
+            </span>
+          </label>
+        )}
       </div>
     </article>
   )
@@ -180,6 +216,15 @@ MovieCard.propTypes = {
   trailerKey: PropTypes.string,
   isPreviewPlaying: PropTypes.bool.isRequired,
   isDimmed: PropTypes.bool.isRequired,
+  onComparisonToggle: PropTypes.func,
+  isInComparison: PropTypes.bool,
+  isComparisonFull: PropTypes.bool,
+}
+
+MovieCard.defaultProps = {
+  onComparisonToggle: null,
+  isInComparison: false,
+  isComparisonFull: false,
 }
 
 export default MovieCard

@@ -7,6 +7,7 @@ import MovieModal from './components/MovieModal'
 import SearchBar from './components/SearchBar'
 import Sidebar from './components/Sidebar'
 import SkeletonCard from './components/SkeletonCard'
+import ComparisonModal from './components/ComparisonModal'
 
 const TMDB_NOW_PLAYING_URL = 'https://api.themoviedb.org/3/movie/now_playing'
 const TMDB_SEARCH_URL = 'https://api.themoviedb.org/3/search/movie'
@@ -49,6 +50,10 @@ const App = () => {
   const [featuredMovieIndex, setFeaturedMovieIndex] = useState(0)
   const [featuredTransitionFromIndex, setFeaturedTransitionFromIndex] = useState(null)
   const [parallaxOffset, setParallaxOffset] = useState(0)
+  const [similarMovies, setSimilarMovies] = useState([])
+  const [isLoadingSimilar, setIsLoadingSimilar] = useState(false)
+  const [comparisonMovies, setComparisonMovies] = useState([])
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false)
   const hoverPreviewTimeoutRef = useRef(null)
   const featuredTransitionTimeoutRef = useRef(null)
 
@@ -99,6 +104,36 @@ const App = () => {
       setIsLoadingList(false)
     }
   }
+
+  const fetchSimilarMovies = useCallback(async (movieId) => {
+    if (!apiKey || !movieId) {
+      return
+    }
+
+    try {
+      setIsLoadingSimilar(true)
+      const params = new URLSearchParams({
+        api_key: apiKey,
+        language: 'en-US',
+        page: '1',
+      })
+
+      const response = await fetch(
+        `${TMDB_MOVIE_DETAILS_URL}/${movieId}/similar?${params.toString()}`,
+      )
+
+      if (!response.ok) {
+        throw new Error(`Similar movies request failed with status ${response.status}`)
+      }
+
+      const data = await response.json()
+      setSimilarMovies(data.results?.slice(0, 6) || [])
+    } catch (error) {
+      setSimilarMovies([])
+    } finally {
+      setIsLoadingSimilar(false)
+    }
+  }, [apiKey])
 
   useEffect(() => {
     fetchMovies({ page: 1, mode: 'now_playing', query: '', append: false })
@@ -323,6 +358,24 @@ const App = () => {
     setAiRecommendation(null)
     setIsLoadingAi(false)
     setHoverPreview(null)
+    setSimilarMovies([])
+  }
+
+  const handleToggleComparison = (movie) => {
+    setComparisonMovies((prev) => {
+      const isAlreadySelected = prev.some((m) => m.id === movie.id)
+      if (isAlreadySelected) {
+        return prev.filter((m) => m.id !== movie.id)
+      }
+      if (prev.length >= 3) {
+        return prev
+      }
+      return [...prev, movie]
+    })
+  }
+
+  const handleClearComparison = () => {
+    setComparisonMovies([])
   }
 
   useEffect(() => {
@@ -373,7 +426,8 @@ const App = () => {
       return
     }
     fetchMovieTrailerKey(selectedMovieId)
-  }, [fetchMovieTrailerKey, selectedMovieId])
+    fetchSimilarMovies(selectedMovieId)
+  }, [fetchMovieTrailerKey, fetchSimilarMovies, selectedMovieId])
 
   const getMovieInsight = useCallback(async (title, genres, overview) => {
     if (!openRouterApiKey) {
@@ -766,6 +820,60 @@ Focus on who this movie is for and what kind of evening watch experience it offe
               </button>
             </div>
             {listError && <p className="error-message">{listError}</p>}
+            {comparisonMovies.length > 0 && (
+              <div className="comparison-bar">
+                <div className="comparison-bar__header">
+                  <h3 className="comparison-bar__title">
+                    Compare Movies ({comparisonMovies.length}/3)
+                  </h3>
+                  <button
+                    type="button"
+                    className="comparison-bar__clear"
+                    onClick={handleClearComparison}
+                  >
+                    Clear All
+                  </button>
+                </div>
+                <div className="comparison-bar__movies">
+                  {comparisonMovies.map((movie) => (
+                    <div key={movie.id} className="comparison-bar__movie">
+                      <img
+                        src={
+                          movie.poster_path
+                            ? `https://image.tmdb.org/t/p/w92${movie.poster_path}`
+                            : 'https://via.placeholder.com/92x138?text=No+Poster'
+                        }
+                        alt={movie.title}
+                        className="comparison-bar__poster"
+                      />
+                      <div className="comparison-bar__info">
+                        <p className="comparison-bar__movie-title">{movie.title}</p>
+                        <p className="comparison-bar__movie-rating">
+                          Rating: {movie.vote_average?.toFixed(1) || 'N/A'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="comparison-bar__remove"
+                        onClick={() => handleToggleComparison(movie)}
+                        aria-label={`Remove ${movie.title} from comparison`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {comparisonMovies.length >= 2 && (
+                  <button
+                    type="button"
+                    className="comparison-bar__compare-button"
+                    onClick={() => setIsComparisonModalOpen(true)}
+                  >
+                    Compare Selected
+                  </button>
+                )}
+              </div>
+            )}
             <div className={`movie-grid ${isSidebarVisible ? 'movie-grid--with-sidebar' : ''}`.trim()}>
               {isLoadingList
                 ? Array.from({ length: 8 }).map((_, index) => <SkeletonCard key={`skeleton-${index}`} />)
@@ -783,6 +891,9 @@ Focus on who this movie is for and what kind of evening watch experience it offe
                       trailerKey={trailerKeysByMovieId[String(movie.id)] ?? null}
                       isPreviewPlaying={false}
                       isDimmed={hoveredMovieId !== null && hoveredMovieId !== movie.id}
+                      onComparisonToggle={handleToggleComparison}
+                      isInComparison={comparisonMovies.some((m) => m.id === movie.id)}
+                      isComparisonFull={comparisonMovies.length >= 3}
                     />
                   ))}
             </div>
@@ -845,7 +956,15 @@ Focus on who this movie is for and what kind of evening watch experience it offe
         aiRecommendation={aiRecommendation}
         aiLoading={isLoadingAi}
         trailerKey={selectedMovieTrailerKey}
+        similarMovies={similarMovies}
+        isLoadingSimilar={isLoadingSimilar}
         onClose={handleCloseModal}
+        onMovieClick={handleMovieClick}
+      />
+      <ComparisonModal
+        movies={comparisonMovies}
+        isOpen={isComparisonModalOpen}
+        onClose={() => setIsComparisonModalOpen(false)}
       />
     </div>
   )

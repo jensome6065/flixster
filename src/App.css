@@ -307,6 +307,152 @@
   text-align: center;
 }
 
+.comparison-bar {
+  animation: slideDown 0.3s ease;
+  background: rgba(23, 32, 51, 0.8);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.2);
+  margin: 0 0 1.5rem;
+  padding: 1rem;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.comparison-bar__header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.comparison-bar__title {
+  color: var(--color-text);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.comparison-bar__clear {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 6px;
+  color: #fca5a5;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.comparison-bar__clear:hover {
+  background: rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+
+.comparison-bar__movies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.comparison-bar__movie {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.5rem;
+  position: relative;
+}
+
+.comparison-bar__poster {
+  border-radius: 4px;
+  height: 60px;
+  object-fit: cover;
+  width: 40px;
+}
+
+.comparison-bar__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.comparison-bar__movie-title {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comparison-bar__movie-rating {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.comparison-bar__remove {
+  align-items: center;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 4px;
+  color: #fca5a5;
+  cursor: pointer;
+  display: flex;
+  font-size: 1.2rem;
+  height: 1.5rem;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.2s ease;
+  width: 1.5rem;
+}
+
+.comparison-bar__remove:hover {
+  background: rgba(239, 68, 68, 0.4);
+  transform: scale(1.1);
+}
+
+.comparison-bar__compare-button {
+  background: var(--color-accent);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.7rem 1.2rem;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 100%;
+}
+
+.comparison-bar__compare-button:hover {
+  background: var(--color-accent-hover);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+  transform: translateY(-2px);
+}
+
+.comparison-bar__compare-button:active {
+  transform: translateY(0);
+}
+
 .sort-row {
   align-items: center;
   display: flex;
@@ -514,6 +660,22 @@ Responsive targets:
   .app-content,
   .featured-banner-shell,
   .featured-banner-viewport {
+    width: 100%;
+  }
+
+  .comparison-bar {
+    padding: 0.8rem;
+  }
+
+  .comparison-bar__title {
+    font-size: 1rem;
+  }
+
+  .comparison-bar__movies {
+    flex-direction: column;
+  }
+
+  .comparison-bar__movie {
     width: 100%;
   }
 
