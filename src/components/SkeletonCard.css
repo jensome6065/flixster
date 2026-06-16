@@ -1,8 +1,19 @@
 .skeleton-card {
+  animation: fadeInSkeleton 0.3s ease forwards;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 10px;
+  opacity: 0;
   overflow: hidden;
+}
+
+@keyframes fadeInSkeleton {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .skeleton-card__poster {
@@ -60,6 +71,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .skeleton-card {
+    animation: none;
+    opacity: 1;
+  }
+
   .skeleton-shimmer {
     animation: none;
   }

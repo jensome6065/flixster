@@ -98,9 +98,13 @@ const App = () => {
       const data = await response.json()
       const incomingMovies = data.results || []
 
-      setMovies((prevMovies) =>
-        append ? [...prevMovies, ...incomingMovies] : incomingMovies,
-      )
+      setMovies((prevMovies) => {
+        const combinedMovies = append ? [...prevMovies, ...incomingMovies] : incomingMovies
+        const uniqueMovies = combinedMovies.filter(
+          (movie, index, self) => index === self.findIndex((m) => m.id === movie.id)
+        )
+        return uniqueMovies
+      })
       setCurrentPage(page)
       setTotalPages(data.total_pages || 1)
     } catch (error) {
@@ -949,7 +953,7 @@ Focus on who this movie is for and what kind of evening watch experience it offe
             <div className={`movie-grid ${isSidebarVisible ? 'movie-grid--with-sidebar' : ''}`.trim()}>
               {isLoadingList
                 ? Array.from({ length: 8 }).map((_, index) => <SkeletonCard key={`skeleton-${index}`} />)
-                : sortedMovies.map((movie) => (
+                : sortedMovies.map((movie, index) => (
                     <MovieCard
                       key={movie.id}
                       movie={movie}
@@ -966,6 +970,7 @@ Focus on who this movie is for and what kind of evening watch experience it offe
                       onComparisonToggle={handleToggleComparison}
                       isInComparison={comparisonMovies.some((m) => m.id === movie.id)}
                       isComparisonFull={comparisonMovies.length >= 3}
+                      style={{ animationDelay: `${Math.min(index, 12) * 0.05}s` }}
                     />
                   ))}
             </div>

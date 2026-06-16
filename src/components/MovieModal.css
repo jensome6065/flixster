@@ -298,14 +298,27 @@
 }
 
 .movie-modal__similar-card {
+  animation: fadeInSimilar 0.4s ease forwards;
   background: rgba(23, 32, 51, 0.4);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   cursor: pointer;
+  opacity: 0;
   overflow: hidden;
   padding: 0;
   text-align: left;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fadeInSimilar {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .movie-modal__similar-card:hover {
@@ -382,7 +395,12 @@
 @media (prefers-reduced-motion: reduce) {
   .movie-modal__ticketing-options,
   .movie-modal,
-  .movie-modal-overlay {
+  .movie-modal-overlay,
+  .movie-modal__similar-card {
     animation: none;
+  }
+
+  .movie-modal__similar-card {
+    opacity: 1;
   }
 }

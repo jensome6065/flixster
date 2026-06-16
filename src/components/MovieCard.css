@@ -1,4 +1,5 @@
 .movie-card {
+  animation: fadeInCard 0.5s ease forwards;
   background: rgba(23, 32, 51, 0.6);
   backdrop-filter: blur(10px) saturate(180%);
   -webkit-backdrop-filter: blur(10px) saturate(180%);
@@ -11,11 +12,23 @@
   position: relative;
   font: inherit;
   min-height: 100%;
+  opacity: 0;
   overflow: hidden;
   padding: 0;
   text-align: left;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, background 0.3s ease;
   width: 100%;
+}
+
+@keyframes fadeInCard {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .movie-card:hover {
@@ -279,10 +292,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .movie-card,
+  .movie-card {
+    animation: none;
+    opacity: 1;
+  }
+
   .movie-card:hover,
   .movie-card--previewing {
-    animation: none;
     transform: none;
   }
 }

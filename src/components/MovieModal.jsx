@@ -334,12 +334,13 @@ const MovieModal = ({
               <section className="movie-modal__similar">
                 <h3 className="movie-modal__similar-title">More Like This</h3>
                 <div className="movie-modal__similar-grid">
-                  {similarMovies.map((movie) => (
+                  {similarMovies.map((movie, index) => (
                     <button
                       key={movie.id}
                       type="button"
                       className="movie-modal__similar-card"
                       onClick={() => onMovieClick(movie.id)}
+                      style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       <img
                         src={
