@@ -12,6 +12,7 @@ import ComparisonModal from './components/ComparisonModal'
 const TMDB_NOW_PLAYING_URL = 'https://api.themoviedb.org/3/movie/now_playing'
 const TMDB_SEARCH_URL = 'https://api.themoviedb.org/3/search/movie'
 const TMDB_MOVIE_DETAILS_URL = 'https://api.themoviedb.org/3/movie'
+const TMDB_TRENDING_URL = 'https://api.themoviedb.org/3/trending/movie/week'
 const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions'
 const OPENROUTER_MODELS = [
   'google/gemma-4-31b-it:free',
@@ -54,8 +55,12 @@ const App = () => {
   const [isLoadingSimilar, setIsLoadingSimilar] = useState(false)
   const [comparisonMovies, setComparisonMovies] = useState([])
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false)
+  const [searchSuggestions, setSearchSuggestions] = useState([])
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const hoverPreviewTimeoutRef = useRef(null)
   const featuredTransitionTimeoutRef = useRef(null)
+  const searchDebounceRef = useRef(null)
 
   const apiKey = import.meta.env.VITE_API_KEY
   const openRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY
@@ -175,6 +180,58 @@ const App = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  const fetchSearchSuggestions = useCallback(async (query) => {
+    if (!query.trim()) {
+      try {
+        setIsLoadingSuggestions(true)
+        const params = new URLSearchParams({
+          api_key: apiKey,
+        })
+        const response = await fetch(`${TMDB_TRENDING_URL}?${params.toString()}`)
+        if (response.ok) {
+          const data = await response.json()
+          setSearchSuggestions(data.results?.slice(0, 5) || [])
+        }
+      } catch (error) {
+        setSearchSuggestions([])
+      } finally {
+        setIsLoadingSuggestions(false)
+      }
+      return
+    }
+
+    try {
+      setIsLoadingSuggestions(true)
+      const params = new URLSearchParams({
+        api_key: apiKey,
+        language: 'en-US',
+        query: query,
+        page: '1',
+      })
+      const response = await fetch(`${TMDB_SEARCH_URL}?${params.toString()}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSearchSuggestions(data.results?.slice(0, 5) || [])
+      }
+    } catch (error) {
+      setSearchSuggestions([])
+    } finally {
+      setIsLoadingSuggestions(false)
+    }
+  }, [apiKey])
+
+  const handleSearchChange = (value) => {
+    setSearchQuery(value)
+
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+    }
+
+    searchDebounceRef.current = setTimeout(() => {
+      fetchSearchSuggestions(value)
+    }, 300)
+  }
+
   const handleSearchSubmit = () => {
     const trimmedQuery = searchQuery.trim()
     if (!trimmedQuery) {
@@ -182,7 +239,15 @@ const App = () => {
     }
 
     setActiveMode('search')
+    setShowSuggestions(false)
     fetchMovies({ page: 1, mode: 'search', query: trimmedQuery, append: false })
+  }
+
+  const handleSuggestionClick = (movie) => {
+    setSearchQuery(movie.title)
+    setShowSuggestions(false)
+    setActiveMode('search')
+    fetchMovies({ page: 1, mode: 'search', query: movie.title, append: false })
   }
 
   const handleShowNowPlaying = () => {
@@ -789,10 +854,16 @@ Focus on who this movie is for and what kind of evening watch experience it offe
             )}
             <SearchBar
               query={searchQuery}
-              onQueryChange={setSearchQuery}
+              onQueryChange={handleSearchChange}
               onSubmit={handleSearchSubmit}
               onClear={handleShowNowPlaying}
               isLoading={isLoadingList}
+              suggestions={searchSuggestions}
+              showSuggestions={showSuggestions}
+              onSuggestionClick={handleSuggestionClick}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              isLoadingSuggestions={isLoadingSuggestions}
             />
             <p className="mode-label">
               Showing: {activeMode === 'search' ? `Search results for "${searchQuery}"` : 'Now Playing'}
