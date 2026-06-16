@@ -5,6 +5,7 @@ import './MovieModal.css'
 const TMDB_BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w780'
 const FALLBACK_BACKDROP =
   'https://via.placeholder.com/780x439?text=Backdrop+Unavailable'
+const LOCATION_STORAGE_KEY = 'flixster_user_location'
 
 const formatRuntime = (runtime) => {
   if (!runtime) {
@@ -27,6 +28,64 @@ const formatReleaseDate = (releaseDate) => {
   return releaseDate
 }
 
+const getUserLocation = () => {
+  const stored = localStorage.getItem(LOCATION_STORAGE_KEY)
+  if (stored) {
+    try {
+      return JSON.parse(stored)
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+const saveUserLocation = (location) => {
+  localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(location))
+}
+
+const requestGeolocation = () => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation not supported'))
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          timestamp: Date.now(),
+        }
+        saveUserLocation(location)
+        resolve(location)
+      },
+      (error) => {
+        reject(error)
+      },
+      { timeout: 10000 }
+    )
+  })
+}
+
+const buildTicketingLinks = (movieTitle, location) => {
+  const encodedTitle = encodeURIComponent(movieTitle)
+  const locationParam = location
+    ? `${location.latitude},${location.longitude}`
+    : 'current+location'
+
+  const googleMapsQuery = location
+    ? `https://www.google.com/maps/search/${encodedTitle}+theaters/@${location.latitude},${location.longitude},13z`
+    : `https://www.google.com/maps/search/${encodedTitle}+theaters+near+me`
+
+  return {
+    fandango: `https://www.fandango.com/search?q=${encodedTitle}&location=${locationParam}`,
+    google: `https://www.google.com/search?q=${encodedTitle}+tickets+near+me`,
+    googleMaps: googleMapsQuery,
+  }
+}
+
 const MovieModal = ({
   movieId,
   movieDetails,
@@ -39,6 +98,9 @@ const MovieModal = ({
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState('info')
+  const [userLocation, setUserLocation] = useState(null)
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false)
+  const [showTicketingOptions, setShowTicketingOptions] = useState(false)
 
   useEffect(() => {
     if (!isOpen) {
@@ -60,7 +122,37 @@ const MovieModal = ({
       return
     }
     setActiveTab('info')
+    setShowTicketingOptions(false)
   }, [isOpen, movieId])
+
+  useEffect(() => {
+    const cachedLocation = getUserLocation()
+    if (cachedLocation) {
+      setUserLocation(cachedLocation)
+    }
+  }, [])
+
+  const handleGetTickets = async () => {
+    let location = userLocation
+
+    if (!location) {
+      setIsRequestingLocation(true)
+      try {
+        location = await requestGeolocation()
+        setUserLocation(location)
+      } catch (error) {
+        console.warn('Could not get location:', error.message)
+      } finally {
+        setIsRequestingLocation(false)
+      }
+    }
+
+    setShowTicketingOptions(true)
+  }
+
+  const handleTicketingLink = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
 
   const backdropUrl = movieDetails?.backdrop_path
     ? `${TMDB_BACKDROP_BASE_URL}${movieDetails.backdrop_path}`
@@ -152,6 +244,55 @@ const MovieModal = ({
               </p>
             </div>
             <p className="movie-modal__overview">{movieDetails.overview || 'Overview unavailable.'}</p>
+            <div className="movie-modal__ticketing">
+              <button
+                type="button"
+                className="movie-modal__get-tickets-button"
+                onClick={handleGetTickets}
+                disabled={isRequestingLocation}
+              >
+                {isRequestingLocation ? 'Getting Location...' : 'Get Tickets'}
+              </button>
+              {showTicketingOptions && (
+                <div className="movie-modal__ticketing-options">
+                  <p className="movie-modal__ticketing-label">Choose a ticketing service:</p>
+                  <button
+                    type="button"
+                    className="movie-modal__ticketing-option"
+                    onClick={() => handleTicketingLink(buildTicketingLinks(movieDetails.title, userLocation).fandango)}
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Fandango
+                  </button>
+                  <button
+                    type="button"
+                    className="movie-modal__ticketing-option"
+                    onClick={() => handleTicketingLink(buildTicketingLinks(movieDetails.title, userLocation).google)}
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    Google Search
+                  </button>
+                  <button
+                    type="button"
+                    className="movie-modal__ticketing-option"
+                    onClick={() => handleTicketingLink(buildTicketingLinks(movieDetails.title, userLocation).googleMaps)}
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    Google Maps
+                  </button>
+                </div>
+              )}
+            </div>
             <section className="movie-modal__insight" aria-live="polite">
               <h3 className="movie-modal__insight-title">Watch Recommendation</h3>
               {aiLoading && <p className="movie-modal__status">Getting a recommendation...</p>}

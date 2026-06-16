@@ -112,6 +112,98 @@
   margin-top: 0.8rem;
 }
 
+.movie-modal__ticketing {
+  border-top: 1px solid var(--color-border);
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+}
+
+.movie-modal__get-tickets-button {
+  background: var(--color-accent);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.7rem 1.4rem;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  width: 100%;
+}
+
+.movie-modal__get-tickets-button:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.movie-modal__get-tickets-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.movie-modal__get-tickets-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.movie-modal__ticketing-options {
+  animation: ticketingOptionsSlideIn 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.movie-modal__ticketing-label {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.3rem;
+}
+
+.movie-modal__ticketing-option {
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  text-align: left;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.movie-modal__ticketing-option:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--color-accent);
+}
+
+.movie-modal__ticketing-option:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.movie-modal__ticketing-option svg {
+  flex-shrink: 0;
+}
+
+@keyframes ticketingOptionsSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .movie-modal__trailer-wrap {
   background: #000;
   border-radius: 10px;
@@ -169,5 +261,16 @@
 
   .movie-modal__backdrop {
     max-height: 220px;
+  }
+
+  .movie-modal__ticketing-option {
+    font-size: 0.9rem;
+    padding: 0.65rem 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .movie-modal__ticketing-options {
+    animation: none;
   }
 }
