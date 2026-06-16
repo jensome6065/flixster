@@ -254,6 +254,16 @@ const MovieModal = ({
                 <strong>Runtime:</strong> {formatRuntime(movieDetails.runtime)}
               </p>
               <p>
+                <strong>Rating:</strong> {movieDetails.vote_average?.toFixed(1) || 'N/A'} / 10
+                {movieDetails.vote_count && (
+                  <span className="movie-modal__vote-count">
+                    {' '}({movieDetails.vote_count >= 1000
+                      ? `${(movieDetails.vote_count / 1000).toFixed(1)}k`
+                      : movieDetails.vote_count} votes)
+                  </span>
+                )}
+              </p>
+              <p>
                 <strong>Release Date:</strong> {formatReleaseDate(movieDetails.release_date)}
               </p>
               <p>
@@ -375,6 +385,8 @@ MovieModal.propTypes = {
     title: PropTypes.string,
     backdrop_path: PropTypes.string,
     runtime: PropTypes.number,
+    vote_average: PropTypes.number,
+    vote_count: PropTypes.number,
     release_date: PropTypes.string,
     genres: PropTypes.arrayOf(
       PropTypes.shape({

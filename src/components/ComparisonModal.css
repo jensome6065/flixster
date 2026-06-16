@@ -113,6 +113,12 @@
   font-weight: 700;
 }
 
+.comparison-modal__vote-count {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
 .comparison-modal__overview {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;

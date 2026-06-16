@@ -42,6 +42,13 @@ const ComparisonModal = ({ movies, isOpen, onClose }) => {
                   <span className="comparison-modal__stat-label">Rating</span>
                   <span className="comparison-modal__stat-value">
                     {movie.vote_average?.toFixed(1) || 'N/A'} / 10
+                    {movie.vote_count && (
+                      <span className="comparison-modal__vote-count">
+                        {' '}({movie.vote_count >= 1000
+                          ? `${(movie.vote_count / 1000).toFixed(1)}k`
+                          : movie.vote_count})
+                      </span>
+                    )}
                   </span>
                 </div>
                 <div className="comparison-modal__stat">
@@ -78,6 +85,7 @@ ComparisonModal.propTypes = {
       title: PropTypes.string.isRequired,
       poster_path: PropTypes.string,
       vote_average: PropTypes.number,
+      vote_count: PropTypes.number,
       release_date: PropTypes.string,
       popularity: PropTypes.number,
       overview: PropTypes.string,

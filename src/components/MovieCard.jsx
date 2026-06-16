@@ -13,6 +13,18 @@ const formatVoteAverage = (voteAverage) => {
   return voteAverage.toFixed(1)
 }
 
+const formatVoteCount = (voteCount) => {
+  if (typeof voteCount !== 'number') {
+    return ''
+  }
+
+  if (voteCount >= 1000) {
+    return `(${(voteCount / 1000).toFixed(1)}k votes)`
+  }
+
+  return `(${voteCount} votes)`
+}
+
 const formatReleaseDate = (releaseDate) => {
   if (!releaseDate) {
     return 'Release date unavailable'
@@ -37,7 +49,7 @@ const MovieCard = ({
   isInComparison,
   isComparisonFull,
 }) => {
-  const { id, title, poster_path: posterPath, vote_average: voteAverage, release_date: releaseDate } = movie
+  const { id, title, poster_path: posterPath, vote_average: voteAverage, vote_count: voteCount, release_date: releaseDate } = movie
 
   const posterUrl = posterPath
     ? `${TMDB_IMAGE_BASE_URL}${posterPath}`
@@ -173,7 +185,9 @@ const MovieCard = ({
       </div>
       <div className="movie-card__content">
         <h3 className="movie-card__title">{title}</h3>
-        <p className="movie-card__vote">Vote Average: {formatVoteAverage(voteAverage)}</p>
+        <p className="movie-card__vote">
+          Rating: {formatVoteAverage(voteAverage)} {formatVoteCount(voteCount)}
+        </p>
         <p className="movie-card__release">{formatReleaseDate(releaseDate)}</p>
         {onComparisonToggle && (
           <label
@@ -204,6 +218,7 @@ MovieCard.propTypes = {
     title: PropTypes.string.isRequired,
     poster_path: PropTypes.string,
     vote_average: PropTypes.number,
+    vote_count: PropTypes.number,
     release_date: PropTypes.string,
   }).isRequired,
   onClick: PropTypes.func.isRequired,
