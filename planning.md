@@ -89,7 +89,7 @@
 ## 2) API Contracts
 
 Base URL: `https://api.themoviedb.org/3`  
-Authentication: API key passed as `api_key` query param (stored in `.env` as `VITE_TMDB_API_KEY`).
+Authentication: API key passed as `api_key` query param (stored in `.env` as `VITE_API_KEY`).
 
 ### A) Now Playing movies
 - **Endpoint:** `GET https://api.themoviedb.org/3/movie/now_playing`
@@ -286,4 +286,153 @@ Simple flow diagram:
 - **Movie card intent:** Cards should feel tactile with subtle elevation, clean spacing, and a gentle lift on hover/focus to signal interactivity without distraction.
 - **Modal intent:** The overlay should create depth with a dark translucent backdrop, while the modal content uses clear hierarchy for title, metadata, and overview.
 - **Control intent:** Search, sort, and action buttons should share a consistent visual language with obvious focus states for keyboard users.
+
+## 7) Additional Features Architecture
+
+### Feature inventory (implemented)
+
+- Featured hero/banner carousel for top-rated now playing titles with timed rotation and manual prev/next controls.
+- Featured hero trailer autoplay (YouTube embed) with fallback backdrop image when trailer is unavailable.
+- Search suggestions dropdown with:
+  - Trending suggestions (empty query)
+  - Debounced search suggestions (non-empty query)
+- Desktop-only hover trailer preview panel for movie cards.
+- Favorites and watched list management with a toggleable sidebar.
+- Comparison workflow:
+  - Select up to 3 movies from cards
+  - Open comparison modal for side-by-side metadata/overview
+- Modal enhancements:
+  - Trailer tab
+  - Similar movies ("More Like This")
+  - Geolocation-assisted "Get Tickets" quick actions
+
+### Additional components and responsibilities
+
+#### `Sidebar`
+- **Responsibility:** Displays user-curated movie collections (favorites and watched) with quick scan metadata.
+- **Renders:** Two list sections with counts and empty states.
+- **Props:** `favoritedMovies`, `watchedMovies`.
+
+#### `ComparisonModal`
+- **Responsibility:** Compares 2-3 selected movies side-by-side.
+- **Renders:** Poster, rating, vote count, release date, popularity, and overview per selected movie.
+- **Props:** `movies`, `isOpen`, `onClose`.
+
+#### `SkeletonCard`
+- **Responsibility:** Prevents layout shift and communicates loading state during list fetches.
+- **Renders:** Placeholder tile in movie-grid shape.
+- **Props:** none.
+
+### Additional API contracts
+
+#### D) Trending suggestions
+- **Endpoint:** `GET https://api.themoviedb.org/3/trending/movie/week`
+- **Params:** `api_key`
+- **Usage:** Populate suggestion list when search input is focused and query is empty.
+- **Fields used:** `id`, `title`, `poster_path`, `release_date`, `vote_average`.
+
+#### E) Movie videos (trailers)
+- **Endpoint:** `GET https://api.themoviedb.org/3/movie/{movie_id}/videos`
+- **Params:** `api_key`, `language`
+- **Usage:** Resolve trailer keys for featured banner, modal trailer tab, and hover previews.
+- **Selection logic:** Prefer official YouTube trailer, then official teaser, then newest trailer/teaser fallback.
+
+#### F) Similar movies
+- **Endpoint:** `GET https://api.themoviedb.org/3/movie/{movie_id}/similar`
+- **Params:** `api_key`, `language`, `page`
+- **Usage:** Show "More Like This" section in modal (`slice(0, 6)`).
+
+### Additional state architecture
+
+- `searchSuggestions: MovieSummary[]`
+  - **Initial:** `[]`
+  - **Owner:** `App`
+  - **Updates when:** trending fetch or debounced search suggestion fetch completes.
+
+- `isLoadingSuggestions: boolean`
+  - **Initial:** `false`
+  - **Owner:** `App`
+  - **Updates when:** suggestion requests start/finish.
+
+- `showSuggestions: boolean`
+  - **Initial:** `false`
+  - **Owner:** `App`
+  - **Updates when:** search input focus/blur toggles dropdown visibility.
+
+- `favoriteMoviesById: Record<string, MovieSummary>`
+  - **Initial:** `{}`
+  - **Owner:** `App`
+  - **Updates when:** favorite button is toggled on any `MovieCard`.
+
+- `watchedMoviesById: Record<string, MovieSummary>`
+  - **Initial:** `{}`
+  - **Owner:** `App`
+  - **Updates when:** watched button is toggled on any `MovieCard`.
+
+- `isSidebarVisible: boolean`
+  - **Initial:** `false`
+  - **Owner:** `App`
+  - **Updates when:** user clicks "Show Lists / Hide Lists".
+
+- `comparisonMovies: MovieSummary[]`
+  - **Initial:** `[]`
+  - **Owner:** `App`
+  - **Updates when:** comparison checkbox is toggled on cards (max size = 3), or cleared.
+
+- `isComparisonModalOpen: boolean`
+  - **Initial:** `false`
+  - **Owner:** `App`
+  - **Updates when:** "Compare Selected" opens modal; close button/overlay closes it.
+
+- `trailerKeysByMovieId: Record<string, string | null>`
+  - **Initial:** `{}`
+  - **Owner:** `App`
+  - **Updates when:** movie trailer lookup resolves and is cached.
+
+- `hoveredMovieId: number | null`
+  - **Initial:** `null`
+  - **Owner:** `App`
+  - **Updates when:** mouse enters/leaves movie-card media area.
+
+- `hoverPreview: { movieId, title, voteAverage, trailerKey, top, left } | null`
+  - **Initial:** `null`
+  - **Owner:** `App`
+  - **Updates when:** delayed hover preview is resolved and positioned.
+
+- `isDesktopHoverPreviewEnabled: boolean`
+  - **Initial:** `false`
+  - **Owner:** `App`
+  - **Updates when:** desktop hover media query changes.
+
+- `featuredMovieIndex: number`
+  - **Initial:** `0`
+  - **Owner:** `App`
+  - **Updates when:** carousel rotates automatically or user navigates with arrows.
+
+- `featuredTransitionFromIndex: number | null`
+  - **Initial:** `null`
+  - **Owner:** `App`
+  - **Updates when:** crossfade transitions between featured movies occur.
+
+- `parallaxOffset: number`
+  - **Initial:** `0`
+  - **Owner:** `App`
+  - **Updates when:** window scroll changes.
+
+- `similarMovies: MovieSummary[]`
+  - **Initial:** `[]`
+  - **Owner:** `App`
+  - **Updates when:** selected movie changes and similar endpoint returns.
+
+- `isLoadingSimilar: boolean`
+  - **Initial:** `false`
+  - **Owner:** `App`
+  - **Updates when:** similar movie request starts/finishes.
+
+### Additional data flow notes
+
+- **Suggestion flow:** Search input changes -> debounced request -> suggestions dropdown update -> suggestion click triggers full search fetch.
+- **Trailer flow:** Any movie context needing video (featured/modal/hover) -> `/videos` lookup -> cached trailer key -> YouTube embed URL generation.
+- **Comparison flow:** Checkbox toggles update `comparisonMovies` -> compare bar appears -> modal opens when 2+ selections exist.
+- **Modal enhancement flow:** Selecting a movie triggers details + trailer key + similar fetch in parallel; AI recommendation runs after details are available.
 
